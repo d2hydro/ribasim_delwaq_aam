@@ -4,6 +4,7 @@ channels = ["conda-forge"]
 platforms = ["win-64"]
 
 [dependencies]
+ipykernel = "*"
 mypy = "*"
 ribasim = "==2025.5.0"
 ruff = "*"
