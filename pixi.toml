@@ -1,0 +1,10 @@
+[project]
+name = "Ribasim-Delwaq"
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[dependencies]
+mypy = "*"
+ribasim = "==2025.5.0"
+ruff = "*"
+python = "3.13.*"
