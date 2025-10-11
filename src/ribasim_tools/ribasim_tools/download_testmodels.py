@@ -9,7 +9,7 @@ import requests
 from ribasim_tools.settings import settings
 
 
-def download_test_models(overwrite: bool = True):
+def download_testmodels(overwrite: bool = True):
     """Download test models from the ribasim_delwaq_aam repository"""
     # create data_dir
     file_name = "generated_testmodels"
