@@ -8,5 +8,11 @@ ipykernel = "*"
 mypy = "*"
 ribasim = "==2025.5.0"
 ruff = "*"
+pydantic = ">=2"
+pydantic-settings = "*"
 python = "3.13.*"
 xugrid = "*"
+
+
+[pypi-dependencies]
+ribasim_tools = { path = "src/ribasim_tools", editable = true }
