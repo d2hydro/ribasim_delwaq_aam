@@ -50,7 +50,8 @@ display(model.level_boundary.concentration)  # level boundaries
 toml_path = settings.data_dir.joinpath("basic_delwaq") / model.filepath.name
 shutil.rmtree(toml_path.parent, ignore_errors=True)
 model.write(toml_path)
-run_ribasim(toml_path, settings.ribasim_exe)
+specs = run_ribasim(toml_path, settings.ribasim_exe)
+assert specs.exit_code == 0
 
 # %%
 
@@ -86,7 +87,8 @@ fig.suptitle("Delwaq network")
 # Runnen van Delwaq met de DHydro DIMR
 dimr_config = toml_path.parent.joinpath("delwaq", "dimr_config.xml")
 
-run_delwaq(dimr_config=dimr_config, run_dimr_bat=settings.run_dimr_bat)
+specs = run_delwaq(dimr_config=dimr_config, run_dimr_bat=settings.run_dimr_bat)
+assert specs.exit_code == 0
 
 # %%
 
