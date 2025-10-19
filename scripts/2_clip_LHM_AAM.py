@@ -2,68 +2,49 @@
 import geopandas as gpd
 from ribasim import Model
 
-from ribasim_tools import settings
-from ribasim_tools.case_conversions import pascal_to_snake_case
+from ribasim_tools import clip_model, run_ribasim, settings
 
-# %% inlezen model en clip-shape
+# %% [markdown]
+
+### lees model en knip polygon in
+#
+# Let op (!):
+# - polygon moet dezelfde CRS hebben als het model
+# - individuele shapes in de polygonen-file kunnen slivers bevatten. Lossen we hier op door te bufferen en ontbufferen
+
 toml_path = settings.data_dir.joinpath("lhm_aam", "AaenMaas_2025_9_0", "aam.toml")
 model = Model.read(toml_path)
 
 clip_boundary_gpkg = settings.data_dir.joinpath("shp", "subcatchments_Bakelse_Aa.shp")
-polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all()
+polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all().buffer(1).buffer(-1)
 
 
-# %% clip-functie
+# %% [markdown]
+### clip-functie
+#
+# Met de `clip_model` kunnen we instellen:
+# - `keep_node_ids`: knopen die buiten de polygon vallen, maar we willen houden
+# - `drop_node_ids`: knopen die bínnen de polygon vallen, maar we willen weggooien
+# - `convert_node_types`: Basins die we toevoegen búiten het gebied worden LevelBoundaries en die mogen niet met ManningResistances worden verbonden
+# - `default_flow_rate`: Capaciteit voor de ManningResistances die worden geconverteert naar Outlets. LevelBoundaries krijgen de Basin.state mee als level
+#
+# De functie print Links trough polygon-boundary: [...]. Hierin staan de links die door de rand gaan.
+# Door die lijst te inspecteren in het te knippen model kun je de `keep_node_ids`, `drop_node_ids` en `convert_node_types` goed zetten.
 
-keep_node_ids = []
-drop_node_ids = []
+clip_model(
+    model=model,
+    polygon=polygon,
+    keep_node_ids=[1942, 1791, 1280, 1846, 72, 709],
+    drop_node_ids=[86],
+    convert_node_types={1942: "LevelBoundary", 1791: "LevelBoundary", 1280: "LevelBoundary", 709: "Outlet"},
+    default_flow_rate=25,
+)
 
-# first estimate off node_ids
-node_ids = keep_node_ids + model.basin.node.df.within(polygon).index.to_list()
-node_ids = [node_id for node_id in node_ids if node_ids not in drop_node_ids]
-
-# get links trough polygon boundary
-links = model.link.df[model.link.df.intersects(polygon.exterior)]
-
-node_df = model.node_table().df
-conversion_node_types: dict[int:str] = {}
-
-for link in links.itertuples():
-    us_node_geometry, ds_node_geometry = link.geometry.boundary.geoms
-    # if line starts and ends in polygon, we don't need to expand node-ids
-    if us_node_geometry.within(polygon) and ds_node_geometry.within(polygon):
-        continue
-    if us_node_geometry.within(polygon):
-        us_node_id = link.from_node_id
-        # TODO: add logic to find all downstream node_ids and add them to node_ids
-        # TODO: expand conversion_node_types Basin -> LevelBoundary and (possibly) ManningResistance -> Outlet
-    if ds_node_geometry.within(polygon):
-        ds_node_id = link.from_node_id
-        # TODO: add logic to find all upstream node_ids and add them to node_ids
-        # TODO: expand conversion_node_types Basin -> LevelBoundary and (possibly) ManningResistance -> Outlet
-
-# TODO: get logic for deleting node_ids from all tables from RIBASIM-nl
-
-
-# convert to drop_nodes function
-drop_node_ids = node_df[~node_df.index.isin(node_ids)].index.to_list()
-
-for node_type, node_type_df in node_df.loc[drop_node_ids].groupby("node_type"):
-    drop_node_ids_from_tables = node_type_df.index
-    # read table
-    table = getattr(model, pascal_to_snake_case(node_type))
-
-    # remove node from all tables
-    for attr in table.model_fields.keys():
-        df = getattr(table, attr).df
-        if df is not None:
-            if "node_id" in df.columns:
-                getattr(table, attr).df = df[~df.node_id.isin(drop_node_ids_from_tables)]
-            else:
-                getattr(table, attr).df = df[~df.index.isin(drop_node_ids_from_tables)]
-
-
-model.use_validation = False
+# %% [markdown]
+### wegschrijven model
+#
+# Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
+# Bij `run_ribasim()` print de rekenkern de foute verbindingen
+model.use_validation = True
 model.write(toml_path.parent.with_name("LHM_AAM_clipped") / toml_path.name)
-
-# %%
+run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
