@@ -38,6 +38,7 @@ clip_model(
     drop_node_ids=[86],
     convert_node_types={1942: "LevelBoundary", 1791: "LevelBoundary", 1280: "LevelBoundary", 709: "Outlet"},
     default_flow_rate=25,
+    inplace=True,
 )
 
 # %% [markdown]

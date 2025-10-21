@@ -65,7 +65,7 @@ def clip_model(
 
     # convert to drop node ids
     drop_node_ids += node_df[~node_df.index.isin(node_ids)].index.to_list()
-    drop_nodes(model=clipped_model, drop_node_ids=drop_node_ids)
+    drop_nodes(model=clipped_model, drop_node_ids=drop_node_ids, inplace=True)
 
     # get links trough polygon boundary
     links = clipped_model.link.df[clipped_model.link.df.intersects(polygon.exterior)]
