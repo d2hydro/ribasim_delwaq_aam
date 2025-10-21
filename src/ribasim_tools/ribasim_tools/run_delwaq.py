@@ -10,13 +10,20 @@ from pathlib import Path
 RunSpecs = namedtuple("RunSpecs", ["exit_code"])
 
 
-def run_delwaq(dimr_config: Path, run_dimr_bat: Path):
-    """To run a Ribasim model
+def run_delwaq(dimr_config: Path, run_dimr_bat: Path) -> RunSpecs:
+    """To run a Delwaq model within Python
 
-    Args:
-        toml_path (Path): path to your ribasim toml-file
-        ribasim_exe (Path): path to ribasim exe-file
+    Parameters
+    ----------
+    dimr_config : Path
+        Path to dimr_config.xml
+    run_dimr_bat : Path
+        Path to run_dimr.bat part of DHydro installation
 
+    Returns
+    -------
+    RunSpecs
+        Specification of run, for now only exit_code
     """
     dimr_config = dimr_config.absolute().resolve()
     run_dimr_bat = run_dimr_bat.absolute().resolve()
