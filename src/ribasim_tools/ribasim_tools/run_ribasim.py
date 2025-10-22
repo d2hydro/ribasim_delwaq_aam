@@ -36,13 +36,27 @@ def parse_computation_time(line: str) -> timedelta | None:
     return None
 
 
-def run_ribasim(toml_path: Path, ribasim_exe: Path | None):
-    """To run a Ribasim model
+def run_ribasim(toml_path: Path, ribasim_exe: Path | None) -> RunSpecs:
+    """To run a Ribasim model in Python
 
-    Args:
-        toml_path (Path): path to your ribasim toml-file
-        ribasim_exe (Path): path to ribasim exe-file
+    Parameters
+    ----------
+    toml_path : Path
+        Path to toml-file
+    ribasim_exe : Path | None
+        Optional path to ribasim.exe. If not specified is should be set in system PATH
 
+    Returns
+    -------
+    RunSpecs
+        Specification of run, including exit_code and simulation_time
+
+    Raises
+    ------
+    FileNotFoundError
+        Ribasim toml-file does not exist
+    FileNotFoundError
+        Ribasim.exe specified does not exist
     """
     env = os.environ.copy()
     toml_path = Path(toml_path)
