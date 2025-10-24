@@ -1,4 +1,7 @@
-# %%
+# %% [markdown]
+### Clip HSA-model met ribasim_tools.clip_model
+# Importeer packages
+
 import geopandas as gpd
 from ribasim import Model
 
@@ -30,9 +33,6 @@ polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all().buffer
 #
 # De functie print Links trough polygon-boundary: [...]. Hierin staan de links die door de rand gaan.
 # Door die lijst te inspecteren in het te knippen model kun je de `keep_node_ids`, `drop_node_ids` en `convert_node_types` goed zetten.
-#
-# Voor het HSA-model worden de volgende links gesneden: Links trough polygon-boundary: [3976, 4573, 4950, 4958, 4959]]
-#
 
 clip_model(
     model=model,
