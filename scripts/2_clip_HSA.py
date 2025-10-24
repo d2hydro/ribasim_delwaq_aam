@@ -73,7 +73,7 @@ clip_model(
 #
 # Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
 # Bij `run_ribasim()` print de rekenkern de foute verbindingen
-model.use_validation = False
+model.use_validation = True
 model.write(toml_path.parent.with_name("hsa_model_clipped") / toml_path.name)
 run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
 
