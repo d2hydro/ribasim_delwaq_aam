@@ -31,24 +31,50 @@ polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all().buffer
 # De functie print Links trough polygon-boundary: [...]. Hierin staan de links die door de rand gaan.
 # Door die lijst te inspecteren in het te knippen model kun je de `keep_node_ids`, `drop_node_ids` en `convert_node_types` goed zetten.
 #
-# Voor het HSA-model worden de volgende links gesneden: Links trough polygon-boundary: [3976, 4959]
+# Voor het HSA-model worden de volgende links gesneden: Links trough polygon-boundary: [3976, 4573, 4950, 4958, 4959]]
 #
 
 clip_model(
     model=model,
     polygon=polygon,
-    keep_node_ids=[],
+    keep_node_ids=[
+        40001971,
+        10000233,
+        30001270,
+        30000120,
+        10000224,
+        40000035,
+        40000172,
+        40000434,
+        40000832,
+        40000308,
+        50000070,
+        40001927,  # control pump
+        40001926,  # extra takje
+        40000197,  # extra takje
+    ],
     drop_node_ids=[],
-    convert_node_types={},
+    convert_node_types={
+        10000233: "LevelBoundary",
+        30000120: "LevelBoundary",
+        10000224: "LevelBoundary",
+        40000035: "LevelBoundary",
+        40000172: "LevelBoundary",
+        40000434: "LevelBoundary",
+        40000308: "LevelBoundary",
+        40000832: "LevelBoundary",
+        50000070: "LevelBoundary",
+    },
     inplace=True,
 )
-
 
 # %% [markdown]
 ### wegschrijven model
 #
 # Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
 # Bij `run_ribasim()` print de rekenkern de foute verbindingen
-model.use_validation = True
+model.use_validation = False
 model.write(toml_path.parent.with_name("hsa_model_clipped") / toml_path.name)
 run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
+
+# %%
