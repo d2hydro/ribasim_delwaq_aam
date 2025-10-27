@@ -42,7 +42,7 @@ time = [model.starttime] * 4
 model.level_boundary.concentration = level_boundary.Concentration(
     node_id=[1280, 53, 1958, 1568],
     time=time,
-    substance=["Kanaal van Deurne", "Kanaal van Deurne", "Defensiekanaal", "Defensiekanaal"],
+    substance=["Kanaal_van_Deurne", "Kanaal_van_Deurne", "Defensiekanaal", "Defensiekanaal"],
     concentration=[1, 1, 1, 1],
 )
 
@@ -67,7 +67,9 @@ basin_fractions = (
 )
 basin_fractions.replace(to_replace="hoofdwater", value="stromend", inplace=True)
 basin_fractions.replace(to_replace="doorgaand", value="stromend", inplace=True)
-basin_fractions["substance"] = basin_fractions["DEEL_WL"] + " (" + basin_fractions["meta_categorie"] + ")"
+basin_fractions["substance"] = (basin_fractions["DEEL_WL"] + "_" + basin_fractions["meta_categorie"]).str.replace(
+    " ", "_"
+)
 
 time = [model.starttime] * len(basin_fractions)
 model.basin.concentration = basin.Concentration(
