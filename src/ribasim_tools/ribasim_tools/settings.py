@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path(__file__).parents[3] / "data"
     ribasim_exe: Path = Path("ribasim")
     run_dimr_bat: Path = Path(
-        r"c:\Program Files\Deltares\D-HYDRO Suite 2025.01 1D2D\plugins\DeltaShell.Dimr\kernels\x64\bin\run_dimr.bat"
+        r"c:\Program Files\Deltares\D-HYDRO Suite 2025.02 1D2D\plugins\DeltaShell.Dimr\kernels\x64\bin\run_dimr.bat"
     )
     model_config = SettingsConfigDict(env_file=(".env"))
 
