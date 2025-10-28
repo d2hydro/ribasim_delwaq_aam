@@ -34,8 +34,8 @@ polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all().buffer
 clip_model(
     model=model,
     polygon=polygon,
-    keep_node_ids=[1942, 1791, 1280, 1846, 72, 709],
-    drop_node_ids=[86],
+    keep_node_ids=[1942, 1791, 1280, 1846, 72, 709, 367],
+    drop_node_ids=[86, 52, 447],
     convert_node_types={1942: "LevelBoundary", 1791: "LevelBoundary", 1280: "LevelBoundary", 709: "Outlet"},
     default_flow_rate=25,
     inplace=True,

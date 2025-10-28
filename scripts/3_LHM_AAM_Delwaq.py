@@ -2,10 +2,11 @@
 import geopandas as gpd
 from ribasim import Model, Node
 from ribasim.delwaq import generate, parse, plot_fraction
-from ribasim.nodes import basin, level_boundary, outlet
-from shapely.geometry import Point
+from ribasim.nodes import basin, level_boundary
+from shapely.geometry import LineString, Point
 
 from ribasim_tools import run_delwaq, run_ribasim, settings
+from ribasim_tools.check_model import check_level_boundaries_for_delwaq
 
 # %% [markdown]
 
@@ -23,13 +24,32 @@ model.experimental.concentration = True
 #
 # De Outlets bij het Kanaal van Deurne en Defensiekanaal krijgen een inlaatcapaciteit die overeen komt met
 # de gewenste aanvoerdebieten zoals gegeven door Luuk van Gerwen op 7-10-2025
+#
+# Voor validiteit van Delwaq splitsen we LevelBoundary # 1280 (Kanaal van Deurne) in 2 LevelBoundaries, omdat een 1 LevelBoundary mag linken naar max 1 connector-node
+#
+# Aan het einde van dit block controlleren we de validiteit van de overige boundary-nodes
 
-node = model.outlet.add(Node(geometry=Point(188116.74, 381743.37)), tables=[outlet.Static(flow_rate=[0.3])])
-model.link.add(model.level_boundary[1280], node)
-model.link.add(node, model.basin[1226])
-
-for flow_rate, node_id in [(0.1, 2029), (0.025, 2034), (0.025, 601), (0.075, 156)]:
+for flow_rate, node_id in [(0.3, 367), (0.1, 2029), (0.025, 2034), (0.025, 601), (0.075, 156)]:
     model.outlet.static.df.loc[model.outlet.static.df.node_id == node_id, "flow_rate"] = flow_rate
+
+# verplaatsen node 1280 vlakbij outlet node 367
+model.level_boundary.node.df.loc[1280, "geometry"] = Point(
+    model.outlet[367].geometry.x + 10, model.outlet[367].geometry.y
+)
+model.link.df.loc[1352, "geometry"] = LineString([model.level_boundary[1280].geometry, model.outlet[367].geometry])
+
+# Nieuwe levelboundary naast outlet node 2029 en link 2134 hier naartoe leiden
+outlet_node = model.outlet[2029]
+level = model.level_boundary.static[1280].level.iloc[0]
+
+boundary_node = model.level_boundary.add(
+    Node(geometry=Point(outlet_node.geometry.x + 10, outlet_node.geometry.y)),
+    tables=[level_boundary.Static(level=[level])],
+)
+model.link.df.loc[2134, "from_node_id"] = boundary_node.node_id
+model.link.df.loc[2134, "geometry"] = LineString([boundary_node.geometry, outlet_node.geometry])
+
+check_level_boundaries_for_delwaq(model)
 
 # %% [markdown]
 
@@ -70,6 +90,7 @@ basin_fractions.replace(to_replace="doorgaand", value="stromend", inplace=True)
 basin_fractions["substance"] = (basin_fractions["DEEL_WL"] + "_" + basin_fractions["meta_categorie"]).str.replace(
     " ", "_"
 )
+basin_fractions["substance"] = basin_fractions["substance"].str[:20]
 
 time = [model.starttime] * len(basin_fractions)
 model.basin.concentration = basin.Concentration(
@@ -107,4 +128,4 @@ assert specs.exit_code == 0
 
 # Parsen van de resultaten
 nmodel = parse(toml_path, graph, substances, output_folder=output_path)
-plot_fraction(nmodel, 1092)
+plot_fraction(nmodel, 1216, substances)
