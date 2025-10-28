@@ -137,6 +137,8 @@ assert specs.exit_code == 0
 nmodel = parse(toml_path, graph, substances, output_folder=output_path)
 plot_fraction(nmodel, 1216, ["Continuity"])
 
+plot_fraction(nmodel, 1216, ["Initial", "Drainage", "Precipitation", "LevelBoundary"])
+
 plot_fraction(
     model=nmodel,
     node_id=1216,
