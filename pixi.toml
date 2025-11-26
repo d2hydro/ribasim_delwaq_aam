@@ -7,7 +7,7 @@ platforms = ["win-64"]
 ipykernel = "*"
 mypy = "*"
 pip = "*"
-ribasim = "==2025.5.0"
+ribasim = "==2025.6.0"
 ruff = "*"
 pydantic = ">=2"
 pydantic-settings = "*"
