@@ -15,7 +15,7 @@ from ribasim_tools import clip_model, run_ribasim, settings
 # - polygon moet dezelfde CRS hebben als het model
 # - individuele shapes in de polygonen-file kunnen slivers bevatten. Lossen we hier op door te bufferen en ontbufferen
 
-toml_path = settings.data_dir.joinpath("hsa_model", "hsa_model_origineel", "ribasim.toml")
+toml_path = settings.data_dir.joinpath("hsa_model", "hsa_model_orgineel", "ribasim.toml")
 model = Model.read(toml_path)
 
 clip_boundary_gpkg = settings.data_dir.joinpath("shp", "subcatchments_Bakelse_Aa.shp")
