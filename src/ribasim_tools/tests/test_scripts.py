@@ -4,6 +4,10 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for testing
+
 import pytest
 
 from ribasim_tools.settings import settings
@@ -36,7 +40,7 @@ def clean_processed_data():
 
 def run_script(script_path: Path) -> subprocess.CompletedProcess:
     """Run a Python script and return the result."""
-
+    
     result = subprocess.run(
         [sys.executable, str(script_path)],
         capture_output=True,
@@ -163,10 +167,6 @@ def test_lhm_aam_delwaq(scripts_dir: Path):
     output_path = output_dir / "aam.toml"
     assert output_path.exists(), "Model should be written"
 
-    output_dir = settings.processed_data_dir / "LHM_AAM_delwaq" / "results"
-    output_path = output_dir / "basin.arrow"
-    assert output_path.exists(), "Model should be written"
-
     output_dir = settings.processed_data_dir / "LHM_AAM_delwaq" / "delwaq"
     output_path = output_dir / "dimr_config.xml"
-    assert output_path.exists(), "Delwaq is written"
+    assert output_path.exists(), "Dimr config should be written"

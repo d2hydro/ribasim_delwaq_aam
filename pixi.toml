@@ -6,6 +6,7 @@ platforms = ["win-64"]
 [dependencies]
 ipykernel = "*"
 mypy = "*"
+netcdf4 = "*"
 pip = "*"
 pytest = ">=9.0.1,<10"
 ribasim = "==2025.5.0"
