@@ -213,7 +213,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/qhull-2020.2-hc790b64_5.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/re2-2025.08.12-ha104f34_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/requests-2.32.5-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2025.5.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2025.6.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/ruff-0.13.2-h3e3edff_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/scikit-learn-1.7.2-py313he28f1d7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/scipy-1.16.2-py313h62a08ca_0.conda
@@ -3416,33 +3416,33 @@ packages:
   - pkg:pypi/requests?source=hash-mapping
   size: 59263
   timestamp: 1755614348400
-- conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2025.5.0-pyhd8ed1ab_0.conda
-  sha256: 5470557d1dcbb13d53f999de1db18687d942643a07b03d84266954c1b18c75d6
-  md5: 567ff95804378d9fc00d3571a9312f67
+- conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2025.6.0-pyhd8ed1ab_0.conda
+  sha256: d889002c1766e348cf3f43cfc60267cf0d266f973d79be98eb7ca07766ee75ec
+  md5: 3f3f0d838974eabaa2181a66bff5e211
   depends:
   - datacompy >=0.16
   - geopandas >=1.0
-  - matplotlib-base >=3.7
+  - matplotlib-base >=3.9
   - netcdf4 >=1.7.1
-  - numpy >=1.25
+  - numpy >=2.0
   - packaging >=23.0
-  - pandas >=2.0
+  - pandas >=2.2
   - pandera >=0.25
   - pyarrow >=17.0
   - pydantic >=2.0
   - pyogrio >=0.8
-  - python >=3.11
+  - python >=3.12
   - shapely >=2.0
   - tomli >=2.0
   - tomli-w >=1.0
-  - xarray >=2025.8.0
+  - xarray >=2023.11
   license: MIT
   license_family: MIT
   purls:
   - pkg:pypi/ribasim?source=hash-mapping
-  size: 295067
-  timestamp: 1757489975358
-- pypi: ./src/ribasim_tools
+  size: 75721
+  timestamp: 1761639315991
+- pypi: src/ribasim_tools
   name: ribasim-tools
   version: 0.0.1
   sha256: c8bc0b21e09abb4e47b3bac8a0dc55d457cf607c6c5b5cec4b93dbd4b304c736
