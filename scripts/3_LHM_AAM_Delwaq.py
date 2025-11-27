@@ -112,14 +112,14 @@ model.basin.concentration = basin.Concentration(
 # %% [markdown]
 
 ## Wegschrijven en runnen van het Ribasim model
-toml_path = toml_path.parent.with_name("LHM_AAM_delwaq") / toml_path.name
+toml_path = settings.processed_data_dir / "LHM_AAM_delwaq" / toml_path.name
 model.write(toml_path)
-run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
+run_ribasim(toml_path, ribasim_exe=settings.ribasim_exe)
 
 # %% [markdown]
 
 # Aanmaken van de Delwaq schematisatie
-output_path = model.filepath.parent.joinpath("delwaq")
+output_path = settings.processed_data_dir / "LHM_AAM_delwaq" / "delwaq"
 graph, substances = generate(toml_path, output_path)
 list(substances)
 
@@ -146,3 +146,5 @@ plot_fraction(
     + list(model.basin.concentration.df.substance.unique())
     + list(model.level_boundary.concentration.df.substance.unique()),
 )
+
+# %%

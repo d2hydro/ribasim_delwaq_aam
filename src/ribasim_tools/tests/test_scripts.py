@@ -4,7 +4,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-
 import pytest
 
 from ribasim_tools.settings import settings
@@ -37,6 +36,7 @@ def clean_processed_data():
 
 def run_script(script_path: Path) -> subprocess.CompletedProcess:
     """Run a Python script and return the result."""
+
     result = subprocess.run(
         [sys.executable, str(script_path)],
         capture_output=True,
@@ -47,7 +47,7 @@ def run_script(script_path: Path) -> subprocess.CompletedProcess:
 
 
 def test_basic_delwaq_example(scripts_dir: Path):
-    """Test that script 1 (basic delwaq example) runs successfully and creates output."""
+    """Test script 1 (basic delwaq example) runs successfully and creates output."""
     script_path = scripts_dir / "1_ribasim_delwaq_basic_example.py"
 
     # Run the script
@@ -61,6 +61,31 @@ def test_basic_delwaq_example(scripts_dir: Path):
     
     # Check expected outputs were created
     output_dir = settings.processed_data_dir / "basic_delwaq"
+    assert output_dir.exists(), "Output directory should be created"
+    
+    results_dir = output_dir / "results"
+    assert results_dir.exists(), "Results directory should be created"
+    
+    delwaq_dir = output_dir / "delwaq"
+    assert delwaq_dir.exists(), "Delwaq directory should be created"
+    assert len(list(delwaq_dir.iterdir())) > 0, "Delwaq directory should contain files"
+
+
+def test_basic_hsa_example(scripts_dir: Path):
+    """Test script 1 (basic hsa example) runs successfully and creates output."""
+    script_path = scripts_dir / "1_ribasim_delwaq_hsa_example.py"
+
+    # Run the script
+    result = run_script(script_path)
+    
+    # Check script ran successfully
+    if result.returncode != 0:
+        print(f"STDOUT:\n{result.stdout}")
+        print(f"STDERR:\n{result.stderr}")
+    assert result.returncode == 0, f"Script should run without errors. Error: {result.stderr}"
+    
+    # Check expected outputs were created
+    output_dir = settings.processed_data_dir / "basic_hsa"
     assert output_dir.exists(), "Output directory should be created"
     
     results_dir = output_dir / "results"
@@ -115,6 +140,33 @@ def test_clip_hsa(scripts_dir: Path):
     assert result.returncode == 0, f"Script should run without errors. Error: {result.stderr}"
     
     # Check output was created
-    output_dir = settings.processed_data_dir / "hsa_model" / "hsa_model_clipped"
+    output_dir = settings.processed_data_dir / "hsa_model_clipped"
     output_path = output_dir / "ribasim.toml"
     assert output_path.exists(), "Clipped model should be written"
+
+def test_lhm_aam_delwaq(scripts_dir: Path):
+    """Test script 3 (LHM AAM Delwaq) runs successfully."""
+    script_path = scripts_dir / "3_LHM_AAM_Delwaq.py"
+    assert script_path.exists(), f"Script should exist at {script_path}"
+    
+    # Run the script
+    result = run_script(script_path)
+    
+    # Check script ran successfully
+    if result.returncode != 0:
+        print(f"STDOUT:\n{result.stdout}")
+        print(f"STDERR:\n{result.stderr}")
+    assert result.returncode == 0, f"Script should run without errors. Error: {result.stderr}"
+    
+    # Check output was created
+    output_dir = settings.processed_data_dir / "LHM_AAM_delwaq"
+    output_path = output_dir / "aam.toml"
+    assert output_path.exists(), "Model should be written"
+
+    output_dir = settings.processed_data_dir / "LHM_AAM_delwaq" / "results"
+    output_path = output_dir / "basin.arrow"
+    assert output_path.exists(), "Model should be written"
+
+    output_dir = settings.processed_data_dir / "LHM_AAM_delwaq" / "delwaq"
+    output_path = output_dir / "dimr_config.xml"
+    assert output_path.exists(), "Delwaq is written"
