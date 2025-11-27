@@ -13,5 +13,11 @@
         },
     },
     "autoDocstring.docstringFormat": "numpy",
-    "autoDocstring.includeExtendedSummary": true
+    "autoDocstring.includeExtendedSummary": true,
+    "python.testing.pytestArgs": [
+        "src/ribasim_tools/tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.testing.cwd": "${workspaceFolder}"
 }
