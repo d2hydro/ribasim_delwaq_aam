@@ -55,9 +55,9 @@ def clip_model(
     """
     # create a copy of model
     if inplace:
-        clipped_model = model.model_copy()
-    else:
         clipped_model = model
+    else:
+        clipped_model = model.model_copy()
 
     # first get all nodes within polygon or keep_ids and reduce by drop_node_ids
     node_df = clipped_model.node_table().df
@@ -112,6 +112,6 @@ def clip_model(
         table.add(Node(**node_dict), tables=[data])
 
     if inplace:
-        return clipped_model
-    else:
         return None
+    else:
+        return clipped_model
