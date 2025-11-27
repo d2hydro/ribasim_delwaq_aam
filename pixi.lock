@@ -3442,7 +3442,7 @@ packages:
   - pkg:pypi/ribasim?source=hash-mapping
   size: 75721
   timestamp: 1761639315991
-- pypi: src/ribasim_tools
+- pypi: ./src/ribasim_tools
   name: ribasim-tools
   version: 0.0.1
   sha256: c8bc0b21e09abb4e47b3bac8a0dc55d457cf607c6c5b5cec4b93dbd4b304c736

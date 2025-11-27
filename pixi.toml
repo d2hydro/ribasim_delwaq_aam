@@ -12,6 +12,7 @@ ribasim = "==2025.6.0"
 ruff = "*"
 pydantic = ">=2"
 pydantic-settings = "*"
+pytest = "*"
 python = "3.13.*"
 xugrid = "*"
 

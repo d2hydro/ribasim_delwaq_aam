@@ -148,3 +148,10 @@ plot_fraction(
 )
 
 # %%
+from ribasim_tools import plot_discharge_origin
+
+plot_discharge_origin(
+    model=nmodel,
+    node_id=1216,
+    tracers=["Initial", "Drainage", "Precipitation", "LevelBoundary"],
+)
