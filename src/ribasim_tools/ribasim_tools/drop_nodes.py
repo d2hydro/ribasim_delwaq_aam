@@ -29,9 +29,9 @@ def drop_nodes(
         Modified model or None depending on inplace setting
     """
     if inplace:
-        result_model = model.model_copy()
-    else:
         result_model = model
+    else:
+        result_model = model.model_copy()
     node_df = result_model.node_table().df
     for node_type, node_type_df in node_df.loc[drop_node_ids].groupby("node_type"):
         drop_node_ids_from_tables = node_type_df.index
@@ -56,7 +56,7 @@ def drop_nodes(
             )
         ]
 
-    if not inplace:
-        return result_model
-    else:
+    if inplace:
         return None
+    else:
+        return result_model
