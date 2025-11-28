@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from ribasim import Model
 
 def plot_discharge_origin(
-    model,
-    node_id,
+    model: Model,
+    node_id: list[int],
     tracers=[
         "LevelBoundary",
         "FlowBoundary",
