@@ -13,7 +13,7 @@ def download_testmodels(overwrite: bool = True):
     """Download test models from the ribasim_delwaq_aam repository"""
     # create data_dir
     file_name = "generated_testmodels"
-    dst_dir = settings.data_dir / file_name
+    dst_dir = settings.source_data_dir / file_name
     if overwrite or (not dst_dir.exists()):
         shutil.rmtree(dst_dir, ignore_errors=True)
         dst_dir.mkdir(parents=True, exist_ok=True)

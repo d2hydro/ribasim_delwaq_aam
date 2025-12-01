@@ -69,6 +69,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/icu-75.1-he0c23c2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/idna-3.10-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-8.7.0-pyhe01879c_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-6.30.1-pyh3521513_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython-9.5.0-pyh6be1c34_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ipython_pygments_lexers-1.1.1-pyhd8ed1ab_0.conda
@@ -178,6 +179,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/pillow-11.3.0-py313hf455b62_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pip-25.2-pyh145f28c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.4.0-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.6.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/polars-1.32.3-default_h34cc8bc_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/polars-default-1.32.3-py39he906d20_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pooch-1.8.2-pyhd8ed1ab_3.conda
@@ -197,6 +199,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pyparsing-3.2.5-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyproj-3.7.2-py313h24787ba_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pysocks-1.7.1-pyh09c184e_7.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-9.0.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/python-3.13.7-hdf00ec1_100_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-dateutil-2.9.0.post0-pyhe01879c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-dotenv-1.1.1-pyhe01879c_0.conda
@@ -210,7 +213,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/qhull-2020.2-hc790b64_5.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/re2-2025.08.12-ha104f34_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/requests-2.32.5-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2025.5.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2025.6.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/ruff-0.13.2-h3e3edff_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/scikit-learn-1.7.2-py313he28f1d7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/scipy-1.16.2-py313h62a08ca_0.conda
@@ -258,7 +261,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zlib-1.3.1-h2466b09_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstandard-0.25.0-py313h5fd188c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-hbeecb71_2.conda
-      - pypi: src/ribasim_tools
+      - pypi: ./src/ribasim_tools
 packages:
 - conda: https://conda.anaconda.org/conda-forge/win-64/_openmp_mutex-4.5-2_gnu.conda
   build_number: 8
@@ -1175,6 +1178,17 @@ packages:
   - pkg:pypi/importlib-metadata?source=hash-mapping
   size: 34641
   timestamp: 1747934053147
+- conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
+  sha256: e1a9e3b1c8fe62dc3932a616c284b5d8cbe3124bbfbedcf4ce5c828cb166ee19
+  md5: 9614359868482abba1bd15ce465e3c42
+  depends:
+  - python >=3.10
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/iniconfig?source=compressed-mapping
+  size: 13387
+  timestamp: 1760831448842
 - conda: https://conda.anaconda.org/conda-forge/noarch/ipykernel-6.30.1-pyh3521513_0.conda
   sha256: 3dd6fcdde5e40a3088c9ecd72c29c6e5b1429b99e927f41c8cee944a07062046
   md5: 953007d45edeb098522ac860aade4fcf
@@ -2889,6 +2903,17 @@ packages:
   - pkg:pypi/platformdirs?source=compressed-mapping
   size: 23653
   timestamp: 1756227402815
+- conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.6.0-pyhd8ed1ab_0.conda
+  sha256: a8eb555eef5063bbb7ba06a379fa7ea714f57d9741fe0efdb9442dbbc2cccbcc
+  md5: 7da7ccd349dbf6487a7778579d2bb971
+  depends:
+  - python >=3.9
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/pluggy?source=hash-mapping
+  size: 24246
+  timestamp: 1747339794916
 - conda: https://conda.anaconda.org/conda-forge/win-64/polars-1.32.3-default_h34cc8bc_0.conda
   sha256: 80f7f9a29aeceab7a3f8fe79ae726bd506ad6c33be3584a115b81f518726a65e
   md5: 9c662172d5f962bfb1d7f51754d87a06
@@ -3185,6 +3210,27 @@ packages:
   - pkg:pypi/pysocks?source=hash-mapping
   size: 21784
   timestamp: 1733217448189
+- conda: https://conda.anaconda.org/conda-forge/noarch/pytest-9.0.1-pyhcf101f3_0.conda
+  sha256: 7f25f71e4890fb60a4c4cb4563d10acf2d741804fec51e9b85a6fd97cd686f2f
+  md5: fa7f71faa234947d9c520f89b4bda1a2
+  depends:
+  - pygments >=2.7.2
+  - python >=3.10
+  - iniconfig >=1.0.1
+  - packaging >=22
+  - pluggy >=1.5,<2
+  - tomli >=1
+  - colorama >=0.4
+  - exceptiongroup >=1
+  - python
+  constrains:
+  - pytest-faulthandler >=2
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/pytest?source=compressed-mapping
+  size: 299017
+  timestamp: 1763049198670
 - conda: https://conda.anaconda.org/conda-forge/win-64/python-3.13.7-hdf00ec1_100_cp313.conda
   build_number: 100
   sha256: b86b5b3a960de2fff0bb7e0932b50846b22b75659576a257b1872177aab444cd
@@ -3370,32 +3416,32 @@ packages:
   - pkg:pypi/requests?source=hash-mapping
   size: 59263
   timestamp: 1755614348400
-- conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2025.5.0-pyhd8ed1ab_0.conda
-  sha256: 5470557d1dcbb13d53f999de1db18687d942643a07b03d84266954c1b18c75d6
-  md5: 567ff95804378d9fc00d3571a9312f67
+- conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2025.6.0-pyhd8ed1ab_0.conda
+  sha256: d889002c1766e348cf3f43cfc60267cf0d266f973d79be98eb7ca07766ee75ec
+  md5: 3f3f0d838974eabaa2181a66bff5e211
   depends:
   - datacompy >=0.16
   - geopandas >=1.0
-  - matplotlib-base >=3.7
+  - matplotlib-base >=3.9
   - netcdf4 >=1.7.1
-  - numpy >=1.25
+  - numpy >=2.0
   - packaging >=23.0
-  - pandas >=2.0
+  - pandas >=2.2
   - pandera >=0.25
   - pyarrow >=17.0
   - pydantic >=2.0
   - pyogrio >=0.8
-  - python >=3.11
+  - python >=3.12
   - shapely >=2.0
   - tomli >=2.0
   - tomli-w >=1.0
-  - xarray >=2025.8.0
+  - xarray >=2023.11
   license: MIT
   license_family: MIT
   purls:
   - pkg:pypi/ribasim?source=hash-mapping
-  size: 295067
-  timestamp: 1757489975358
+  size: 75721
+  timestamp: 1761639315991
 - pypi: src/ribasim_tools
   name: ribasim-tools
   version: 0.0.1

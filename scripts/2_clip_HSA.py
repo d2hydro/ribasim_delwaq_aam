@@ -1,4 +1,7 @@
-# %%
+# %% [markdown]
+### Clip HSA-model met ribasim_tools.clip_model
+# Importeer packages
+
 import geopandas as gpd
 from ribasim import Model
 
@@ -12,7 +15,7 @@ from ribasim_tools import clip_model, run_ribasim, settings
 # - polygon moet dezelfde CRS hebben als het model
 # - individuele shapes in de polygonen-file kunnen slivers bevatten. Lossen we hier op door te bufferen en ontbufferen
 
-toml_path = settings.source_data_dir.joinpath("lhm_aam", "AaenMaas_2025_9_0", "aam.toml")
+toml_path = settings.source_data_dir.joinpath("hsa_model", "ribasim.toml")
 model = Model.read(toml_path)
 
 clip_boundary_gpkg = settings.source_data_dir.joinpath("shp", "subcatchments_Bakelse_Aa.shp")
@@ -34,10 +37,34 @@ polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all().buffer
 clip_model(
     model=model,
     polygon=polygon,
-    keep_node_ids=[1942, 1791, 1280, 1846, 72, 709, 367],
-    drop_node_ids=[86, 52, 447],
-    convert_node_types={1942: "LevelBoundary", 1791: "LevelBoundary", 1280: "LevelBoundary", 709: "Outlet"},
-    default_flow_rate=25,
+    keep_node_ids=[
+        40001971,
+        10000233,
+        30001270,
+        30000120,
+        10000224,
+        40000035,
+        40000172,
+        40000434,
+        40000832,
+        40000308,
+        50000070,
+        40001927,  # control pump
+        40001926,  # extra takje
+        40000197,  # extra takje
+    ],
+    drop_node_ids=[],
+    convert_node_types={
+        10000233: "LevelBoundary",
+        30000120: "LevelBoundary",
+        10000224: "LevelBoundary",
+        40000035: "LevelBoundary",
+        40000172: "LevelBoundary",
+        40000434: "LevelBoundary",
+        40000308: "LevelBoundary",
+        40000832: "LevelBoundary",
+        50000070: "LevelBoundary",
+    },
     inplace=True,
 )
 
@@ -47,7 +74,7 @@ clip_model(
 # Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
 # Bij `run_ribasim()` print de rekenkern de foute verbindingen
 model.use_validation = True
-model.write(settings.processed_data_dir / "LHM_AAM_clipped" / toml_path.name)
+model.write(settings.processed_data_dir / "hsa_model_clipped" / "ribasim.toml")
 run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
 
 # %%
