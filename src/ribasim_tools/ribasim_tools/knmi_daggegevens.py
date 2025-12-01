@@ -4,9 +4,9 @@ from ribasim import Model
 
 from ribasim_tools import settings
 
-DATA_DIR = settings.data_dir / "knmi_daggegevens"
+DATA_DIR = settings.source_data_dir / "knmi_daggegevens"
 station = 375
-model = Model.read(settings.data_dir.joinpath("hsa_model", "hsa_model_clipped", "ribasim.toml"))
+model = Model.read(settings.processed_data_dir.joinpath("hsa_model_clipped", "ribasim.toml"))
 update_time_table: bool = True
 # read json_file
 json_file = DATA_DIR / f"{station}.json"
