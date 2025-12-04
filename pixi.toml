@@ -4,6 +4,7 @@ channels = ["conda-forge"]
 platforms = ["win-64"]
 
 [dependencies]
+imod = "*"
 ipykernel = "*"
 mypy = "*"
 netcdf4 = "*"
