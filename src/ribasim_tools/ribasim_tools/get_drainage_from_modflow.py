@@ -123,23 +123,23 @@ class AssignOfflineBudgets:
 
         # Reindex basin.time to drainage and infiltration time series. Fill any
         # missing values (e.g. due to upsampling) by padding (forward fill).
-        basin_time = []
-        for node_id, group in model.basin.time.df.groupby("node_id"):
+        basin_time: list[pd.DataFrame] = []
+        for _, group in model.basin.time.df.groupby("node_id"):
             group = group.sort_values("time").set_index("time")
             group = group.reindex(budgets_per_node_id.columns)
             for c in group.columns:
                 if pd.api.types.is_numeric_dtype(group[c]):
                     group[c] = group[c].interpolate(method="pad")
             basin_time.append(group.reset_index(drop=False))
-        basin_time = pd.concat(basin_time, ignore_index=True)
+        basin_time_df = pd.concat(basin_time, ignore_index=True)
 
         # Add infiltration and drainage
         infiltration_per_node_id = infiltration_per_node_id.unstack().to_frame("infiltration")
         drainage_per_node_id = drainage_per_node_id.unstack().to_frame("drainage")
-        basin_time = basin_time.set_index(["time", "node_id"])
-        basin_time.loc[infiltration_per_node_id.index, "infiltration"] = infiltration_per_node_id
-        basin_time.loc[drainage_per_node_id.index, "drainage"] = drainage_per_node_id
-        model.basin.time.df = basin_time.reset_index(drop=False)
+        basin_time = basin_time_df.set_index(["time", "node_id"])
+        basin_time_df.loc[infiltration_per_node_id.index, "infiltration"] = infiltration_per_node_id
+        basin_time_df.loc[drainage_per_node_id.index, "drainage"] = drainage_per_node_id
+        model.basin.time.df = basin_time_df.reset_index(drop=False)
 
         return model
 
@@ -173,7 +173,7 @@ class AssignOfflineBudgets:
         # Open the budget-file as zarr if zip-file
         if self.modflow_budgets_path.is_dir():
             budgets = budgets_from_dir(
-                modflow_budgets_path=self.modflow_budgets_path, start_time=model.start_time, end_time=model.end_time
+                modflow_budgets_path=self.modflow_budgets_path, start_time=model.starttime, end_time=model.endtime
             )
         elif self.modflow_budgets_path.is_file() & (self.modflow_budgets_path.suffix == ".zip"):
             budgets = xr.open_zarr(str(self.modflow_budgets_path))
