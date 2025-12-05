@@ -1,10 +1,13 @@
 # %%
+from datetime import datetime
+
 import geopandas as gpd
 import pandas as pd
 from ribasim import Model, Node
 from ribasim.delwaq import generate, parse, plot_fraction
 from ribasim.nodes import basin, level_boundary
 from ribasim_tools.check_model import check_level_boundaries_for_delwaq
+from ribasim_tools.knmi_daggegevens import update_meteo
 from shapely.geometry import LineString, Point
 
 from ribasim_tools import run_delwaq, run_ribasim, settings
@@ -18,6 +21,34 @@ toml_path = settings.source_data_dir.joinpath("lhm_aam", "LHM_AAM_clipped", "aam
 model = Model.read(toml_path)
 model.experimental.concentration = True
 
+
+# %% [markdown]
+
+## Updaten meteorologische randvoorwaarden
+#
+# Updaten van de neerslag en verdamping aan de hand van daggegevens bij Meteostation Volkel (375).
+# Deze gegevens zijn gedownload van het KNMI als JSON: https://www.knmi.nl/nederland-nu/klimatologie/daggegevens
+# Hier maken we de time-table opnieuw aan (recreate_time_table=True) omdat we voor een nieuwe periode gaan rekenen en de bestaande tabel weg willen gooien
+# We updaten ook het bestaande model (inplace=True)
+
+# we maken 2 plotjes voor Neerslag/Verdamping ter controle (7500 mm in 10 jaar == 750 mm/jaar)
+
+starttime = datetime(2015, 1, 1)
+endtime = datetime(2024, 12, 31)
+
+update_meteo(
+    model,
+    station_id=375,
+    starttime=starttime,
+    endtime=endtime,
+    recreate_time_table=True,
+    inplace=True,
+)
+
+df = model.basin.time.df[model.basin.time.df.node_id == 1126].set_index("time")
+df["precipitation"] = df["precipitation"] * 86400 * 1000
+df["potential_evaporation"] = df["potential_evaporation"] * 86400 * 1000
+df[["precipitation", "potential_evaporation"]].cumsum().plot(grid=True)
 
 # %% [markdown]
 
@@ -146,5 +177,3 @@ plot_fraction(
     + list(model.basin.concentration.df.substance.unique())
     + list(model.level_boundary.concentration.df.substance.unique()),
 )
-
-# %%
