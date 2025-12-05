@@ -32,8 +32,6 @@ model.experimental.concentration = True
 # Hier maken we de time-table opnieuw aan (recreate_time_table=True) omdat we voor een nieuwe periode gaan rekenen en de bestaande tabel weg willen gooien
 # We updaten ook het bestaande model (inplace=True)
 
-# we maken 2 plotjes voor Neerslag/Verdamping ter controle (7500 mm in 10 jaar == 750 mm/jaar)
-
 starttime = datetime(2015, 1, 1)
 endtime = datetime(2024, 12, 31)
 
@@ -45,11 +43,6 @@ update_meteo(
     recreate_time_table=True,
     inplace=True,
 )
-
-df = model.basin.time.df[model.basin.time.df.node_id == 1126].set_index("time")
-df["precipitation"] = df["precipitation"] * 86400 * 1000
-df["potential_evaporation"] = df["potential_evaporation"] * 86400 * 1000
-df[["precipitation", "potential_evaporation"]].cumsum().plot(grid=True)
 
 
 # %% [markdown]
@@ -77,6 +70,22 @@ model = assign_offline_budgets.compute_budgets(
     primary_budgets=["bdgriv_sys1"],
     secondary_budgets=["bdgriv_sys2", "bdgdrn_sys1", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
 )
+
+# %% [markdown]
+
+## Plotten van resultaten
+#
+# We converteren alle variabelen van m/s naar mm/dag
+# We plotten cumulatief over 10 jaar
+
+basin_node_id = model.basin.node.df.index[0]
+df = model.basin.time.df[model.basin.time.df.node_id == basin_node_id].set_index("time")
+df["precipitation"] = df["precipitation"] * 86400 * 1000
+df["potential_evaporation"] = df["potential_evaporation"] * 86400 * 1000
+df["drainage"] = df["drainage"] * 86400 * 1000
+df["infiltration"] = df["infiltration"] * 86400 * 1000
+df[["precipitation", "potential_evaporation", "drainage", "infiltration"]].cumsum().plot(grid=True)
+
 
 # %% [markdown]
 

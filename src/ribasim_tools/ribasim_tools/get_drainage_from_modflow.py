@@ -241,7 +241,7 @@ class AssignOfflineBudgets:
         # Add infiltration and drainage
         infiltration_per_node_id = infiltration_per_node_id.unstack().to_frame("infiltration")
         drainage_per_node_id = drainage_per_node_id.unstack().to_frame("drainage")
-        basin_time = basin_time_df.set_index(["time", "node_id"])
+        basin_time_df = basin_time_df.set_index(["time", "node_id"])
         basin_time_df.loc[infiltration_per_node_id.index, "infiltration"] = infiltration_per_node_id
         basin_time_df.loc[drainage_per_node_id.index, "drainage"] = drainage_per_node_id
         model.basin.time.df = basin_time_df.reset_index(drop=False)
