@@ -79,12 +79,15 @@ model = assign_offline_budgets.compute_budgets(
 # We plotten cumulatief over 10 jaar
 
 basin_node_id = model.basin.node.df.index[0]
+basin_area = model.basin.area.df.set_index("node_id").at[basin_node_id, "geometry"].area
 df = model.basin.time.df[model.basin.time.df.node_id == basin_node_id].set_index("time")
 df["precipitation"] = df["precipitation"] * 86400 * 1000
 df["potential_evaporation"] = df["potential_evaporation"] * 86400 * 1000
-df["drainage"] = df["drainage"] * 86400 * 1000
-df["infiltration"] = df["infiltration"] * 86400 * 1000
-df[["precipitation", "potential_evaporation", "drainage", "infiltration"]].cumsum().plot(grid=True)
+df["drainage"] = df["drainage"] * 86400 * 1000 / basin_area
+df["infiltration"] = df["infiltration"] * 86400 * 1000 / basin_area
+df.groupby(df.index.year)[["precipitation", "potential_evaporation", "drainage", "infiltration"]].cumsum().plot(
+    grid=True, title=f"Basin {basin_node_id}"
+)
 
 
 # %% [markdown]
