@@ -188,12 +188,14 @@ class AssignOfflineBudgets:
             Ribasim Model
         """
         # Synchronize LHM budget and model files
+        print("📖 read and validate budgets")
         budgets, model = self._sync_files(model)
 
         # Validate budgets
         self._validate_budgets(budgets=budgets, primary_budgets=primary_budgets, secondary_budgets=secondary_budgets)
 
         # Split into primary and secondary basin definition
+        print("🪓 split basins into primary and secondary")
         primary_basin_definition, secondary_basin_definition = self.split_basin_definitions(
             model,
             basin_split=basin_split,
@@ -202,6 +204,7 @@ class AssignOfflineBudgets:
         )
 
         # create masks
+        print("▦ rasterize basins to masks")
         array = budgets["bdgriv_sys1"].isel(time=0, drop=True)
         primary_basin_mask = imod.prepare.rasterize(
             primary_basin_definition, column="node_id", like=array, fill=-999, dtype=np.int32
@@ -211,11 +214,13 @@ class AssignOfflineBudgets:
         )
 
         # compute budgets
+        print("⚙️ compute budgets per basin")
         budgets_per_node_id = self._compute_budgets_per_node_id(
             budgets, primary_basin_mask, secondary_basin_mask, primary_budgets, secondary_budgets
         )
 
         # convert budgets from m3/day to m3/s
+        print("🧹 misc cleaning operations")
         budgets_per_node_id /= 24 * 60 * 60
 
         # Align model
@@ -239,6 +244,7 @@ class AssignOfflineBudgets:
         basin_time_df = pd.concat(basin_time, ignore_index=True)
 
         # Add infiltration and drainage
+        print("✅ assign to model basin time-table")
         infiltration_per_node_id = infiltration_per_node_id.unstack().to_frame("infiltration")
         drainage_per_node_id = drainage_per_node_id.unstack().to_frame("drainage")
         basin_time_df = basin_time_df.set_index(["time", "node_id"])
