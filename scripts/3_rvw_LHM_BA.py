@@ -58,7 +58,7 @@ node_ids = [i for i in node_ids if i in model.level_boundary.node.df.index]
 model.level_boundary.static.df.loc[model.level_boundary.static.df.node_id.isin(node_ids), "level"] = level_kanalen
 
 # Set level Leijsingloop
-model.level_boundary.static.df.loc[1791, "level"] = 20
+model.level_boundary.static.df.loc[model.level_boundary.static.df.node_id == 1791, "level"] = 20
 
 check_level_boundaries_for_delwaq(model)
 
@@ -133,3 +133,12 @@ df.groupby(df.index.year)[["drainage", "infiltration"]].cumsum().plot(
 ## Wegschrijven en runnen Ribasim model
 model.write(settings.LHM_BA_RVW_toml_path)
 run_ribasim(settings.LHM_BA_RVW_toml_path, ribasim_exe=settings.ribasim_exe)
+
+# %% [markdown]
+
+## Plotten resultaten bij outlet
+
+df = pd.read_feather(model.toml_path.parent.joinpath("results", "flow.arrow"))
+df[df.link_id == 1986].set_index("time")["flow_rate"].plot(
+    title="Afvoer Bakelse Aa nabij Zuid-Willemsvaart", grid=True, xlabel="Tijd", ylabel="Afvoer (m3/s)"
+)
