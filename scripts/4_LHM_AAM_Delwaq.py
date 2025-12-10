@@ -101,11 +101,6 @@ node_ids = check_nodes_continuity(nmodel)
 # %% [ markdown]
 # Plotten van resultaten
 default_tracers = ["LevelBoundary", "Initial", "Drainage", "Precipitation"]
-plot_fraction(nmodel, 1216, ["Continuity"])
-
-plot_fraction(nmodel, 1216, default_tracers)
-
-plot_fractional_flow(nmodel, 1216, 1986, tracers=default_tracers)
 
 user_tracers = (
     ["Initial"]
@@ -113,10 +108,16 @@ user_tracers = (
     + list(model.level_boundary.concentration.df.substance.unique())
 )
 
+plot_fraction(nmodel, 1216, ["Continuity"])
+
+plot_fraction(nmodel, 1216, default_tracers)
+
 plot_fraction(
     model=nmodel,
     node_id=1216,
     tracers=user_tracers,
 )
+
+plot_fractional_flow(nmodel, 1216, 1986, tracers=default_tracers)
 
 plot_fractional_flow(nmodel, 1216, 1986, tracers=user_tracers)
