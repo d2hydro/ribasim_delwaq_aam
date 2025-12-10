@@ -15,8 +15,7 @@ from ribasim_tools import clip_model, run_ribasim, settings
 # - polygon moet dezelfde CRS hebben als het model
 # - individuele shapes in de polygonen-file kunnen slivers bevatten. Lossen we hier op door te bufferen en ontbufferen
 
-toml_path = settings.source_data_dir.joinpath("hsa_model", "ribasim.toml")
-model = Model.read(toml_path)
+model = Model.read(settings.HSA_toml_path)
 
 clip_boundary_gpkg = settings.source_data_dir.joinpath("shp", "subcatchments_Bakelse_Aa.shp")
 polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all().buffer(1).buffer(-1)
@@ -74,7 +73,5 @@ clip_model(
 # Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
 # Bij `run_ribasim()` print de rekenkern de foute verbindingen
 model.use_validation = True
-model.write(settings.processed_data_dir / "hsa_model_clipped" / "ribasim.toml")
+model.write(settings.HSA_BA_toml_path)
 run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
-
-# %%
