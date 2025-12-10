@@ -106,7 +106,6 @@ plot_fraction(
     + list(model.basin.concentration.df.substance.unique())
     + list(model.level_boundary.concentration.df.substance.unique()),
 )
-<<<<<<< HEAD:scripts/3_LHM_AAM_Delwaq.py
 
 # %%
 from ribasim_tools import plot_discharge_origin
@@ -117,5 +116,3 @@ plot_discharge_origin(
     tracers=["Initial", "Drainage", "Precipitation", "LevelBoundary"],
 )
 # %%
-=======
->>>>>>> 9c71a797fa46c9eaa3ab580f2cc2d431deefebcc:scripts/4_LHM_AAM_Delwaq.py
