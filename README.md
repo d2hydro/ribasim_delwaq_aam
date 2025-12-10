@@ -1,6 +1,10 @@
 # ribasim_delwaq_aam
 Ribasim-Delwaq bij waterschap Aa en Maas
 
+## Doel
+
+![use case](use_case.png)
+
 ## Starten in de juiste VSCode omgeving
 - Installeer Pixi: https://pixi.sh/dev/installation/.
 - Start VSCode met `open-vscode.cmd`. Dit maakt een `.pixi\envs\default` map aan met de juiste Python environment.

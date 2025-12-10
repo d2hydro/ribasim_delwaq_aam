@@ -1,61 +1,21 @@
 # %%
+
 import geopandas as gpd
-import pandas as pd
-from ribasim import Model, Node
+from ribasim import Model
 from ribasim.delwaq import generate, parse, plot_fraction
 from ribasim.nodes import basin, level_boundary
 from ribasim_tools.check_model import check_level_boundaries_for_delwaq
-from shapely.geometry import LineString, Point
 
 from ribasim_tools import run_delwaq, run_ribasim, settings
 
 # %% [markdown]
 
-## Inlezen geknipte model
+## Inlezen model met randvoorwaarden
 
 # inlezen en concentratie aanzetten
-toml_path = settings.source_data_dir.joinpath("lhm_aam", "LHM_AAM_clipped", "aam.toml")
-model = Model.read(toml_path)
+toml_path = settings.source_data_dir.joinpath("lhm_aam", "LHM_BA", "aam.toml")
+model = Model.read(settings.LHM_BA_RVW_toml_path)
 model.experimental.concentration = True
-
-
-# %% [markdown]
-
-## Bewerken randvoorwaarden
-#
-# De Outlets bij het Kanaal van Deurne en Defensiekanaal krijgen een inlaatcapaciteit die overeen komt met
-# de gewenste aanvoerdebieten zoals gegeven door Luuk van Gerwen op 7-10-2025
-#
-# Voor validiteit van Delwaq splitsen we LevelBoundary # 1280 (Kanaal van Deurne) in 2 LevelBoundaries, omdat een 1 LevelBoundary mag linken naar max 1 connector-node
-#
-# Aan het einde van dit block controlleren we de validiteit van de overige boundary-nodes
-
-level = 30.5
-flow_rates = [(0.3, 367), (0.1, 2029), (0.025, 2034), (0.025, 601), (0.075, 156)]
-for flow_rate, node_id in [(0.3, 367), (0.1, 2029), (0.025, 2034), (0.025, 601), (0.075, 156)]:
-    model.outlet.static.df.loc[model.outlet.static.df.node_id == node_id, "flow_rate"] = flow_rate
-    model.outlet.static.df.loc[model.outlet.static.df.node_id == node_id, "max_downstream_level"] = pd.NA
-
-# verplaatsen node 1280 vlakbij outlet node 367
-model.level_boundary.node.df.loc[1280, "geometry"] = Point(
-    model.outlet[367].geometry.x + 10, model.outlet[367].geometry.y
-)
-model.link.df.loc[1352, "geometry"] = LineString([model.level_boundary[1280].geometry, model.outlet[367].geometry])
-
-# Nieuwe levelboundary naast outlet node 2029 en link 2134 hier naartoe leiden
-outlet_node = model.outlet[2029]
-
-
-boundary_node = model.level_boundary.add(
-    Node(geometry=Point(outlet_node.geometry.x + 10, outlet_node.geometry.y)),
-    tables=[level_boundary.Static(level=[level])],
-)
-model.link.df.loc[2134, "from_node_id"] = boundary_node.node_id
-model.link.df.loc[2134, "geometry"] = LineString([boundary_node.geometry, outlet_node.geometry])
-
-node_ids = [model.link.df.set_index("to_node_id").at[flow_rate[1], "from_node_id"] for flow_rate in flow_rates]
-model.level_boundary.static.df.loc[model.level_boundary.static.df.node_id.isin(node_ids), "level"] = level
-
 check_level_boundaries_for_delwaq(model)
 
 # %% [markdown]
@@ -112,14 +72,14 @@ model.basin.concentration = basin.Concentration(
 # %% [markdown]
 
 ## Wegschrijven en runnen van het Ribasim model
-toml_path = settings.processed_data_dir / "LHM_AAM_delwaq" / toml_path.name
+toml_path = settings.processed_data_dir / "LHM_BA_Delwaq" / toml_path.name
 model.write(toml_path)
 run_ribasim(toml_path, ribasim_exe=settings.ribasim_exe)
 
 # %% [markdown]
 
 # Aanmaken van de Delwaq schematisatie
-output_path = settings.processed_data_dir / "LHM_AAM_delwaq" / "delwaq"
+output_path = toml_path.parent / "delwaq_output"
 graph, substances = generate(toml_path, output_path)
 list(substances)
 
@@ -146,6 +106,7 @@ plot_fraction(
     + list(model.basin.concentration.df.substance.unique())
     + list(model.level_boundary.concentration.df.substance.unique()),
 )
+<<<<<<< HEAD:scripts/3_LHM_AAM_Delwaq.py
 
 # %%
 from ribasim_tools import plot_discharge_origin
@@ -156,3 +117,5 @@ plot_discharge_origin(
     tracers=["Initial", "Drainage", "Precipitation", "LevelBoundary"],
 )
 # %%
+=======
+>>>>>>> 9c71a797fa46c9eaa3ab580f2cc2d431deefebcc:scripts/4_LHM_AAM_Delwaq.py
