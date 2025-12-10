@@ -33,7 +33,7 @@ def plot_fraction(
         validate_fractions=validate_fractions,
         validation_decimal_precision=validation_decimal_precision,
     )
-    fraction_pivot.plot.area(stacked=True, title=f"Volume fraction for basin {node_id}", ylabel="fraction")
+    fraction_pivot.plot.area(stacked=True, title=f"Volume fraction for basin {node_id}", ylabel="fraction", grid=True)
 
 
 def plot_fractional_flow(

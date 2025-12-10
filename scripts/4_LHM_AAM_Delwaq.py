@@ -120,4 +120,4 @@ plot_fraction(
 
 plot_fractional_flow(nmodel, 1216, 1986, tracers=default_tracers)
 
-plot_fractional_flow(nmodel, 1216, 1986, tracers=user_tracers)
+plot_fractional_flow(nmodel, 1216, 1986, tracers=user_tracers)  # Dit werkt niet vanwege ontbrekende tracers
