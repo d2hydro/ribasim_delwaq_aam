@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     @property
     def LHM_BA_Delwaq_toml_path(self) -> Path:
-        return self.processed_data_dir.joinpath("lhm_aam", "LHM_BA_RVW", "LHM_BA.toml")
+        return self.processed_data_dir.joinpath("lhm_aam", "LHM_BA_Delwaq", "LHM_BA.toml")
 
     @property
     def LHM_BA_Delwaq_output_dir(self) -> Path:
