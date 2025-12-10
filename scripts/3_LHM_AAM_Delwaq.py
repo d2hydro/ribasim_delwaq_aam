@@ -7,6 +7,7 @@ from ribasim import Model, Node
 from ribasim.delwaq import generate, parse, plot_fraction
 from ribasim.nodes import basin, level_boundary
 from ribasim_tools.check_model import check_level_boundaries_for_delwaq
+from ribasim_tools.get_drainage_from_modflow import AssignOfflineBudgets
 from ribasim_tools.knmi_daggegevens import update_meteo
 from shapely.geometry import LineString, Point
 
@@ -31,8 +32,6 @@ model.experimental.concentration = True
 # Hier maken we de time-table opnieuw aan (recreate_time_table=True) omdat we voor een nieuwe periode gaan rekenen en de bestaande tabel weg willen gooien
 # We updaten ook het bestaande model (inplace=True)
 
-# we maken 2 plotjes voor Neerslag/Verdamping ter controle (7500 mm in 10 jaar == 750 mm/jaar)
-
 starttime = datetime(2015, 1, 1)
 endtime = datetime(2024, 12, 31)
 
@@ -45,10 +44,51 @@ update_meteo(
     inplace=True,
 )
 
-df = model.basin.time.df[model.basin.time.df.node_id == 1126].set_index("time")
+
+# %% [markdown]
+
+## Updaten drainage en infiltratie uit GRAM
+#
+# `modflow_budgets_path` met daarin `BDGDRN` en `BDGRIV` sub-folders
+# `metaswap_budgets_path` met daarin `bdgPssw` en `bdgqrun` sub-folders
+# Met `AssignOfflineBudgets` verwijzen we naar de paden
+# Bij `AssignOfflineBudgets.compute_budgets()` specificeren we de lagen die gesommeert primary budgets en secondary budgets zijn
+# `Primary` alles wat niet `meta_categorie` == `bergend` heeft
+
+modflow_budgets_path = (
+    settings.source_data_dir / "GRAM3_2" / "100" / "GRAM32_BASIS1_TA-PRJ" / "RESULTS" / "BASIS1_TA-PRJ"
+)
+metaswap_budgets_path = modflow_budgets_path / "MSWAPINPUT"
+
+
+assign_offline_budgets = AssignOfflineBudgets(
+    modflow_budgets_path=modflow_budgets_path, metaswap_budgets_path=metaswap_budgets_path
+)
+
+model = assign_offline_budgets.compute_budgets(
+    model=model,
+    primary_budgets=["bdgriv_sys1"],
+    secondary_budgets=["bdgriv_sys2", "bdgdrn_sys1", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
+)
+
+# %% [markdown]
+
+## Plotten van resultaten
+#
+# We converteren alle variabelen van m/s naar mm/dag
+# We plotten cumulatief over 10 jaar
+
+basin_node_id = model.basin.node.df.index[0]
+basin_area = model.basin.area.df.set_index("node_id").at[basin_node_id, "geometry"].area
+df = model.basin.time.df[model.basin.time.df.node_id == basin_node_id].set_index("time")
 df["precipitation"] = df["precipitation"] * 86400 * 1000
 df["potential_evaporation"] = df["potential_evaporation"] * 86400 * 1000
-df[["precipitation", "potential_evaporation"]].cumsum().plot(grid=True)
+df["drainage"] = df["drainage"] * 86400 * 1000 / basin_area
+df["infiltration"] = df["infiltration"] * 86400 * 1000 / basin_area
+df.groupby(df.index.year)[["precipitation", "potential_evaporation", "drainage", "infiltration"]].cumsum().plot(
+    grid=True, title=f"Basin {basin_node_id}"
+)
+
 
 # %% [markdown]
 
