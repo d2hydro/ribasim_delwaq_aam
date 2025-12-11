@@ -25,13 +25,20 @@ check_level_boundaries_for_delwaq(model)
 #
 # Op de waterstandsranden bij bovengenoemde inlaten differentieren we in het Kanaal van Deurne en het Defensiekanaal
 
-time = [model.starttime] * 4
+time = [model.starttime] * 6
 
 model.level_boundary.concentration = level_boundary.Concentration(
-    node_id=[1280, 53, 1958, 1568],
+    node_id=[33, 53, 1280, 1568, 1958, 3397],
     time=time,
-    substance=["Kanaal_van_Deurne", "Kanaal_van_Deurne", "Defensiekanaal", "Defensiekanaal"],
-    concentration=[1, 1, 1, 1],
+    substance=[
+        "Defensiekanaal",
+        "Kanaal_van_Deurne",
+        "Kanaal_van_Deurne",
+        "Defensiekanaal",
+        "Defensiekanaal",
+        "Kanaal_van_Deurne",
+    ],
+    concentration=[1] * len(time),
 )
 
 # %% [markdown]
@@ -100,6 +107,8 @@ node_ids = check_nodes_continuity(nmodel)
 
 # %% [ markdown]
 # Plotten van resultaten
+node_id = 1216  # Bakelse Aa
+link_id = 1986  # Uitlaat Bakelse Aa
 default_tracers = ["LevelBoundary", "Initial", "Drainage", "Precipitation"]
 
 user_tracers = (
@@ -108,16 +117,19 @@ user_tracers = (
     + list(model.level_boundary.concentration.df.substance.unique())
 )
 
-plot_fraction(nmodel, 1216, ["Continuity"])
+plot_fraction(nmodel, node_id, ["Continuity"])
 
-plot_fraction(nmodel, 1216, default_tracers)
+plot_fraction(nmodel, node_id, default_tracers)
 
 plot_fraction(
     model=nmodel,
-    node_id=1216,
+    node_id=node_id,
     tracers=user_tracers,
+    legend_outside_figure=True,
 )
 
-plot_fractional_flow(nmodel, 1216, 1986, tracers=default_tracers)
+plot_fractional_flow(nmodel, node_id, link_id, tracers=default_tracers)
 
-plot_fractional_flow(nmodel, 1216, 1986, tracers=user_tracers)  # Dit werkt niet vanwege ontbrekende tracers
+plot_fractional_flow(
+    nmodel, node_id, link_id, tracers=user_tracers, legend_outside_figure=True
+)  # Dit werkt niet vanwege ontbrekende tracers
