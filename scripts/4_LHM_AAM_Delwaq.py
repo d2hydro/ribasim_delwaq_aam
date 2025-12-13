@@ -2,9 +2,11 @@
 
 import geopandas as gpd
 from ribasim import Model
-from ribasim.delwaq import generate, parse, plot_fraction
+from ribasim.delwaq import generate, parse
 from ribasim.nodes import basin, level_boundary
 from ribasim_tools.check_model import check_level_boundaries_for_delwaq
+from ribasim_tools.plot_fractions import plot_fraction, plot_fractional_flow
+from ribasim_tools.read_delwaq_fractions import check_nodes_continuity
 
 from ribasim_tools import run_delwaq, run_ribasim, settings
 
@@ -13,7 +15,6 @@ from ribasim_tools import run_delwaq, run_ribasim, settings
 ## Inlezen model met randvoorwaarden
 
 # inlezen en concentratie aanzetten
-toml_path = settings.source_data_dir.joinpath("lhm_aam", "LHM_BA", "aam.toml")
 model = Model.read(settings.LHM_BA_RVW_toml_path)
 model.experimental.concentration = True
 check_level_boundaries_for_delwaq(model)
@@ -24,13 +25,20 @@ check_level_boundaries_for_delwaq(model)
 #
 # Op de waterstandsranden bij bovengenoemde inlaten differentieren we in het Kanaal van Deurne en het Defensiekanaal
 
-time = [model.starttime] * 4
+time = [model.starttime] * 6
 
 model.level_boundary.concentration = level_boundary.Concentration(
-    node_id=[1280, 53, 1958, 1568],
+    node_id=[33, 53, 1280, 1568, 1958, 3397],
     time=time,
-    substance=["Kanaal_van_Deurne", "Kanaal_van_Deurne", "Defensiekanaal", "Defensiekanaal"],
-    concentration=[1, 1, 1, 1],
+    substance=[
+        "Defensiekanaal",
+        "Kanaal_van_Deurne",
+        "Kanaal_van_Deurne",
+        "Defensiekanaal",
+        "Defensiekanaal",
+        "Kanaal_van_Deurne",
+    ],
+    concentration=[1] * len(time),
 )
 
 # %% [markdown]
@@ -72,37 +80,56 @@ model.basin.concentration = basin.Concentration(
 # %% [markdown]
 
 ## Wegschrijven en runnen van het Ribasim model
-toml_path = settings.processed_data_dir / "LHM_BA_Delwaq" / toml_path.name
-model.write(toml_path)
-run_ribasim(toml_path, ribasim_exe=settings.ribasim_exe)
+model.write(settings.LHM_BA_Delwaq_toml_path)
+run_ribasim(settings.LHM_BA_Delwaq_toml_path, ribasim_exe=settings.ribasim_exe)
 
 # %% [markdown]
 
 # Aanmaken van de Delwaq schematisatie
-output_path = toml_path.parent / "delwaq_output"
-graph, substances = generate(toml_path, output_path)
+graph, substances = generate(settings.LHM_BA_Delwaq_toml_path, settings.LHM_BA_Delwaq_output_dir)
 list(substances)
 
 # %% [markdown]
 
 # Runnen van Delwaq
-dimr_config = output_path / "dimr_config.xml"
+dimr_config = settings.LHM_BA_Delwaq_output_dir / "dimr_config.xml"
 specs = run_delwaq(dimr_config=dimr_config, run_dimr_bat=settings.run_dimr_bat)
 assert specs.exit_code == 0
 
 
 # %% [ markdown]
 
-# Parsen en plotten van de resultaten
-nmodel = parse(toml_path, graph, substances, output_folder=output_path)
-plot_fraction(nmodel, 1216, ["Continuity"])
+# Parsen en controle van Delwaq resultaten. Continuity check voor alle nodes.
 
-plot_fraction(nmodel, 1216, ["Initial", "Drainage", "Precipitation", "LevelBoundary"])
+nmodel = parse(settings.LHM_BA_Delwaq_toml_path, graph, substances, output_folder=settings.LHM_BA_Delwaq_output_dir)
+
+node_ids = check_nodes_continuity(nmodel)
+
+# %% [ markdown]
+# Plotten van resultaten
+node_id = 1216  # Bakelse Aa
+link_id = 1986  # Uitlaat Bakelse Aa
+default_tracers = ["LevelBoundary", "Initial", "Drainage", "Precipitation"]
+
+user_tracers = (
+    ["Initial"]
+    + list(model.basin.concentration.df.substance.unique())
+    + list(model.level_boundary.concentration.df.substance.unique())
+)
+
+plot_fraction(nmodel, node_id, ["Continuity"])
+
+plot_fraction(nmodel, node_id, default_tracers)
 
 plot_fraction(
     model=nmodel,
-    node_id=1216,
-    tracers=["Initial"]
-    + list(model.basin.concentration.df.substance.unique())
-    + list(model.level_boundary.concentration.df.substance.unique()),
+    node_id=node_id,
+    tracers=user_tracers,
+    legend_outside_figure=True,
 )
+
+plot_fractional_flow(nmodel, node_id, link_id, tracers=default_tracers)
+
+plot_fractional_flow(
+    nmodel, node_id, link_id, tracers=user_tracers, legend_outside_figure=True
+)  # Dit werkt niet vanwege ontbrekende tracers
