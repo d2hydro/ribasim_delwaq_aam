@@ -13,10 +13,38 @@ from ribasim_tools import run_ribasim, settings
 
 # %% [markdown]
 
+# Optioneel hergebruik van bestaande time-table als we níet meteo en drainage willen updaten
+
+REUSE_BASIN_TIME_TABLE = True
+
+if REUSE_BASIN_TIME_TABLE:
+    # inlezen geschreven model
+    model = Model.read(settings.LHM_BA_RVW_toml_path)
+    basin_time_df = model.basin.time.df.copy()
+
+# %% [markdown]
+
 ## Inlezen model met randvoorwaarden
 
 # inlezen en concentratie aanzetten
 model = Model.read(settings.LHM_BA_toml_path)
+
+if REUSE_BASIN_TIME_TABLE:
+    # hergebruiken bestaande time-table
+    model.starttime = datetime(2015, 1, 1)
+    model.endtime = datetime(2024, 12, 31)
+    model.basin.time.df = basin_time_df
+
+# %% markdown
+
+## Fixen basin profiles
+#
+# Basin-profiles voor hoofdwater en stromend water bevatten veel teveel opperlakte; 90% en 10% respectievelijk. We maken hier 5% van voor nu
+
+node_ids = model.basin.node.df[model.basin.node.df.meta_categorie == "hoofdwater"].index.to_list()
+model.basin.profile.df.loc[model.basin.profile.df.node_id.isin(node_ids), "area"] /= 18
+node_ids = model.basin.node.df[model.basin.node.df.meta_categorie == "doorgaand"].index.to_list()
+model.basin.profile.df.loc[model.basin.profile.df.node_id.isin(node_ids), "area"] /= 2
 
 # %% [markdown]
 
@@ -72,25 +100,26 @@ check_level_boundaries_for_delwaq(model)
 # Hier maken we de time-table opnieuw aan (recreate_time_table=True) omdat we voor een nieuwe periode gaan rekenen en de bestaande tabel weg willen gooien
 # We updaten ook het bestaande model (inplace=True)
 
-starttime = datetime(2015, 1, 1)
-endtime = datetime(2024, 12, 31)
+if not REUSE_BASIN_TIME_TABLE:
+    starttime = datetime(2015, 1, 1)
+    endtime = datetime(2024, 12, 31)
 
-update_meteo(
-    model,
-    station_id=375,
-    starttime=starttime,
-    endtime=endtime,
-    recreate_time_table=True,
-    inplace=True,
-)
+    update_meteo(
+        model,
+        station_id=375,
+        starttime=starttime,
+        endtime=endtime,
+        recreate_time_table=True,
+        inplace=True,
+    )
 
-basin_node_id = model.basin.node.df.index[0]
-df = model.basin.time.df[model.basin.time.df.node_id == basin_node_id].set_index("time")
-df["precipitation"] = df["precipitation"] * 86400 * 1000
-df["potential_evaporation"] = df["potential_evaporation"] * 86400 * 1000
-df.groupby(df.index.year)[["precipitation", "potential_evaporation"]].cumsum().plot(
-    grid=True, title=f"Neerslag/Verdamping basin {basin_node_id}"
-)
+    basin_node_id = model.basin.node.df.index[0]
+    df = model.basin.time.df[model.basin.time.df.node_id == basin_node_id].set_index("time")
+    df["precipitation"] = df["precipitation"] * 86400 * 1000
+    df["potential_evaporation"] = df["potential_evaporation"] * 86400 * 1000
+    df.groupby(df.index.year)[["precipitation", "potential_evaporation"]].cumsum().plot(
+        grid=True, title=f"Neerslag/Verdamping basin {basin_node_id}"
+    )
 
 
 # %% [markdown]
@@ -103,29 +132,28 @@ df.groupby(df.index.year)[["precipitation", "potential_evaporation"]].cumsum().p
 # Bij `AssignOfflineBudgets.compute_budgets()` specificeren we de lagen die gesommeert primary budgets en secondary budgets zijn
 # `Primary` alles wat niet `meta_categorie` == `bergend` heeft
 
-modflow_budgets_path = (
-    settings.source_data_dir / "GRAM3_2" / "100" / "GRAM32_BASIS1_TA-PRJ" / "RESULTS" / "BASIS1_TA-PRJ"
-)
-metaswap_budgets_path = modflow_budgets_path / "MSWAPINPUT"
+if not REUSE_BASIN_TIME_TABLE:
+    modflow_budgets_path = (
+        settings.source_data_dir / "GRAM3_2" / "100" / "GRAM32_BASIS1_TA-PRJ" / "RESULTS" / "BASIS1_TA-PRJ"
+    )
+    metaswap_budgets_path = modflow_budgets_path / "MSWAPINPUT"
 
+    assign_offline_budgets = AssignOfflineBudgets(
+        modflow_budgets_path=modflow_budgets_path, metaswap_budgets_path=metaswap_budgets_path
+    )
 
-assign_offline_budgets = AssignOfflineBudgets(
-    modflow_budgets_path=modflow_budgets_path, metaswap_budgets_path=metaswap_budgets_path
-)
+    model = assign_offline_budgets.compute_budgets(
+        model=model,
+        primary_budgets=["bdgriv_sys1"],
+        secondary_budgets=["bdgriv_sys2", "bdgdrn_sys1", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
+    )
 
-model = assign_offline_budgets.compute_budgets(
-    model=model,
-    primary_budgets=["bdgriv_sys1"],
-    secondary_budgets=["bdgriv_sys2", "bdgdrn_sys1", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
-)
-
-
-basin_area = model.basin.area.df.set_index("node_id").at[basin_node_id, "geometry"].area
-df["drainage"] = df["drainage"] * 86400 * 1000 / basin_area
-df["infiltration"] = df["infiltration"] * 86400 * 1000 / basin_area
-df.groupby(df.index.year)[["drainage", "infiltration"]].cumsum().plot(
-    grid=True, title=f"Drainage/Infiltratie basin {basin_node_id}"
-)
+    basin_area = model.basin.area.df.set_index("node_id").at[basin_node_id, "geometry"].area
+    df["drainage"] = df["drainage"] * 86400 * 1000 / basin_area
+    df["infiltration"] = df["infiltration"] * 86400 * 1000 / basin_area
+    df.groupby(df.index.year)[["drainage", "infiltration"]].cumsum().plot(
+        grid=True, title=f"Drainage/Infiltratie basin {basin_node_id}"
+    )
 
 
 # %% [markdown]
@@ -142,3 +170,5 @@ df = pd.read_feather(model.toml_path.parent.joinpath("results", "flow.arrow"))
 df[df.link_id == 1986].set_index("time")["flow_rate"].plot(
     title="Afvoer Bakelse Aa nabij Zuid-Willemsvaart", grid=True, xlabel="Tijd", ylabel="Afvoer (m3/s)"
 )
+
+# %%
