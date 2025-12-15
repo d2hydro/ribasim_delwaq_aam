@@ -150,6 +150,7 @@ ax = plot_fractional_flow(
     title=f"Afvoer Bakelse Aa ({location_id})",
     ylabel="Afvoer (m3/s)",
     xlabel="Tijd",
+    ymax=11,
 )
 
 

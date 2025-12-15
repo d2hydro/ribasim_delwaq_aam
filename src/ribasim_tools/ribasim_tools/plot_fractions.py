@@ -68,6 +68,7 @@ def _plot_figure(
     observations: pd.Series | None = None,
     starttime: DateLike | None = None,
     endtime: DateLike | None = None,
+    ymax: float | None = None,
 ) -> None:
     """Reusable plotting function for fractional flow plots."""
     # Clip time-series if starttime/endtime provided
@@ -83,6 +84,9 @@ def _plot_figure(
         color=_get_colors(pivot_df.columns, user_colors=user_colors),
         label=False,
     )
+    if ymax is not None:
+        ax.set_ylim(top=ymax)
+
     if observations is not None:
         observations = observations.loc[pivot_df.index.min() : pivot_df.index.max()]  # clip
         ax.plot(
@@ -93,7 +97,12 @@ def _plot_figure(
             linewidth=1,
             label=observations.name,
         )
-        ax.set_ylim(top=observations.max())
+        if ymax is not None:
+            ymax = max(observations.max(), ymax)
+        else:
+            ymax = observations.max()
+
+        ax.set_ylim(top=ymax)
 
     _make_up_legend(ax, legend_outside_figure)
 
@@ -181,6 +190,7 @@ def plot_fractional_flow(
     title: str | None = None,
     ylabel: str = "Flow rate (m3/s)",
     xlabel: str = "Time",
+    ymax: float | None = None,
 ) -> None:
     """Plot Delwaq fractional flow for a specific link from a Ribasim model
 
@@ -214,6 +224,8 @@ def plot_fractional_flow(
         Y-axis label, by default "Flow rate (m3/s)"
     xlabel: str, optional
         X-axis label, by default "Time"
+    ymax: float, optional
+        hard max-value for y axis
     """
     # Read fractional_flow
     fractional_flow_pivot = read_fractional_flow(
@@ -242,4 +254,5 @@ def plot_fractional_flow(
         observations=observations,
         starttime=starttime,
         endtime=endtime,
+        ymax=ymax,
     )
