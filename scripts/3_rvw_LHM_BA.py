@@ -118,7 +118,7 @@ if not REUSE_BASIN_TIME_TABLE:
     df["precipitation"] = df["precipitation"] * 86400 * 1000
     df["potential_evaporation"] = df["potential_evaporation"] * 86400 * 1000
     df.groupby(df.index.year)[["precipitation", "potential_evaporation"]].cumsum().plot(
-        grid=True, title=f"Neerslag/Verdamping basin {basin_node_id}"
+        grid=True, title=f"Neerslag/Verdamping basin {basin_node_id}", ylabel="mm", xlabel="tijd"
     )
 
 
@@ -149,10 +149,11 @@ if not REUSE_BASIN_TIME_TABLE:
     )
 
     basin_area = model.basin.area.df.set_index("node_id").at[basin_node_id, "geometry"].area
+    df = model.basin.time.df[model.basin.time.df.node_id == basin_node_id].set_index("time")
     df["drainage"] = df["drainage"] * 86400 * 1000 / basin_area
     df["infiltration"] = df["infiltration"] * 86400 * 1000 / basin_area
     df.groupby(df.index.year)[["drainage", "infiltration"]].cumsum().plot(
-        grid=True, title=f"Drainage/Infiltratie basin {basin_node_id}"
+        grid=True, title=f"Drainage/Infiltratie basin {basin_node_id}", ylabel="mm", xlabel="tijd"
     )
 
 

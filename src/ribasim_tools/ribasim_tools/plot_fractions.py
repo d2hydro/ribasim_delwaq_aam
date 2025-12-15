@@ -44,8 +44,18 @@ def _get_colors(columns: list[str], user_colors: dict) -> list[str]:
     return colors
 
 
-def _legend_outside_figure(ax) -> None:
-    ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), borderaxespad=0.0, frameon=False)
+def _make_up_legend(ax, legend_outside_figure) -> None:
+    """Make up figure legend."""
+    # we reverse handles and labels so they match stack-order (bottom in stack is bottom in legend)
+    handles, labels = ax.get_legend_handles_labels()
+
+    # optional placing outside figure (so legend won't be placed on top of stack)
+    if legend_outside_figure:
+        ax.legend(
+            handles[::-1], labels[::-1], loc="center left", bbox_to_anchor=(1.02, 0.5), borderaxespad=0.0, frameon=False
+        )
+    else:
+        ax.legend(handles[::-1], labels[::-1])
 
 
 def _plot_figure(
@@ -84,8 +94,8 @@ def _plot_figure(
             label=observations.name,
         )
         ax.set_ylim(top=observations.max())
-    if legend_outside_figure:
-        _legend_outside_figure(ax)
+
+    _make_up_legend(ax, legend_outside_figure)
 
     return ax
 
