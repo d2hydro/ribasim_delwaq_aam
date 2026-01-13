@@ -55,6 +55,8 @@ def constant_precipitation(model: Model, precipitation_mm_day: float = 5) -> Non
 # =============================================================================
 # Kopieren van model, vóór fixen import
 # =============================================================================
+# Let op(!) vanaf ribasim 2026.1.0RC1 zul je de database eerst handmatig moeten updaten voordat je kunt importeren.
+# Gebruik dan deze code
 # if dst_dir.exists():
 #     shutil.rmtree(dst_dir)
 # dst_dir.parent.mkdir(parents=True, exist_ok=True)
