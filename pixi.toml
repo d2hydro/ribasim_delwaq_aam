@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "Ribasim-Delwaq"
 channels = ["conda-forge"]
 platforms = ["win-64"]

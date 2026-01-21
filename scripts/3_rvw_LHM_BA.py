@@ -59,9 +59,9 @@ model.basin.profile.df.loc[model.basin.profile.df.node_id.isin(node_ids), "area"
 
 level_kanalen = 30.5
 flow_rates = [(0.3, 367), (0.1, 2029), (0.025, 2034), (0.025, 601), (0.065, 156), (0.01, 358), (0.03, 331)]
-for flow_rate, node_id in flow_rates:
-    model.outlet.static.df.loc[model.outlet.static.df.node_id == node_id, "flow_rate"] = flow_rate
-    model.outlet.static.df.loc[model.outlet.static.df.node_id == node_id, "max_downstream_level"] = pd.NA
+for flow_rate, primary_node_id in flow_rates:
+    model.outlet.static.df.loc[model.outlet.static.df.node_id == primary_node_id, "flow_rate"] = flow_rate
+    model.outlet.static.df.loc[model.outlet.static.df.node_id == primary_node_id, "max_downstream_level"] = pd.NA
 
 # verplaatsen node 1280 vlakbij outlet node 367
 model.level_boundary.node.df.loc[1280, "geometry"] = Point(
@@ -145,7 +145,7 @@ if not REUSE_BASIN_TIME_TABLE:
     model = assign_offline_budgets.compute_budgets(
         model=model,
         primary_budgets=["bdgriv_sys1"],
-        secondary_budgets=["bdgriv_sys2", "bdgdrn_sys1", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
+        secondary_budgets=["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
     )
 
     basin_area = model.basin.area.df.set_index("node_id").at[basin_node_id, "geometry"].area
@@ -171,5 +171,64 @@ df = pd.read_feather(model.toml_path.parent.joinpath("results", "flow.arrow"))
 df[df.link_id == 1986].set_index("time")["flow_rate"].plot(
     title="Afvoer Bakelse Aa nabij Zuid-Willemsvaart", grid=True, xlabel="Tijd", ylabel="Afvoer (m3/s)"
 )
+
+# %% [markdown]
+
+
+def compare_series(model: Model, model_node_id: int, imod_node_id: int, systems: list[str]):
+    # Compare primary system (drainage is positive, infiltration is negative)
+    model_df = model.basin.time.df[model.basin.time.df.node_id == model_node_id].set_index("time")
+    model_series = model_df["drainage"] - model_df["infiltration"]
+
+    # Sum iMOD csv and convert m3/day -> m3/s
+    mask = df["ZONE"] == imod_node_id
+    imod_df = df[mask].groupby(["DATE_TIME", "ZONE"], as_index=False).sum(numeric_only=True).set_index("DATE_TIME")
+    imod_series = (
+        -(
+            imod_df[[f"{i.upper()}_OUT" for i in systems]].sum(axis=1)
+            + imod_df[[f"{i.upper()}_IN" for i in systems]].sum(axis=1)
+        )
+        / 86400
+    )
+
+    compare_df = pd.concat([model_series, imod_series], axis=1)
+    compare_df.columns = ["Basin (drainage/infiltratie)", f"iMOD ({','.join(systems)})"]
+    return compare_df
+
+
+# Inlezen waterbalans
+wbal_imod_csv = settings.processed_data_dir.joinpath("wbal", "WBAL_dgeb.csv")
+
+df = pd.read_csv(wbal_imod_csv)
+df["DATE_TIME"] = pd.to_datetime(df["DATE_TIME"], format="%Y%m%d%H%M%S")
+
+primary_node_id = 1216
+primary_systems = ["bdgriv_sys1"]
+secondary_systems = [
+    "bdgriv_sys2",
+    "bdgdrn_sys2",
+    "bdgdrn_sys3",
+]  # Let op (!) "bdgpssw", "bdgqrun" missen
+
+# vinden secondary_node_id
+poly = model.basin.area.df.set_index("node_id").at[primary_node_id, "geometry"]
+secondary_node_id = (
+    model.basin.area.df[(model.basin.area.df.geometry == poly) & (model.basin.area.df.node_id != primary_node_id)]
+    .iloc[0]
+    .node_id
+)
+# Compare primary system (drainage is positive, infiltration is negative)
+compare_series(
+    model=model,
+    model_node_id=primary_node_id,
+    imod_node_id=primary_node_id,
+    systems=primary_systems,
+).plot(title=f"{primary_node_id} (hoofdsysteem)", grid=True)
+compare_series(
+    model=model,
+    model_node_id=secondary_node_id,
+    imod_node_id=primary_node_id,
+    systems=secondary_systems,
+).plot(title=f"{secondary_node_id} (bergend)", grid=True)
 
 # %%
