@@ -15,7 +15,7 @@ from ribasim_tools import run_ribasim, settings
 
 # Optioneel hergebruik van bestaande time-table als we níet meteo en drainage willen updaten
 
-REUSE_BASIN_TIME_TABLE = True
+REUSE_BASIN_TIME_TABLE = False
 
 if REUSE_BASIN_TIME_TABLE:
     # inlezen geschreven model
@@ -146,6 +146,7 @@ if not REUSE_BASIN_TIME_TABLE:
         model=model,
         primary_budgets=["bdgriv_sys1"],
         secondary_budgets=["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
+        ignore_budgets=["bdgdrn_sys1"],
     )
 
     basin_area = model.basin.area.df.set_index("node_id").at[basin_node_id, "geometry"].area
@@ -202,13 +203,9 @@ wbal_imod_csv = settings.processed_data_dir.joinpath("wbal", "WBAL_dgeb.csv")
 df = pd.read_csv(wbal_imod_csv)
 df["DATE_TIME"] = pd.to_datetime(df["DATE_TIME"], format="%Y%m%d%H%M%S")
 
-primary_node_id = 1216
+primary_node_id = 1126
 primary_systems = ["bdgriv_sys1"]
-secondary_systems = [
-    "bdgriv_sys2",
-    "bdgdrn_sys2",
-    "bdgdrn_sys3",
-]  # Let op (!) "bdgpssw", "bdgqrun" missen
+secondary_systems = ["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3"]  # Let op (!) "bdgpssw", "bdgqrun" missen
 
 # vinden secondary_node_id
 poly = model.basin.area.df.set_index("node_id").at[primary_node_id, "geometry"]
@@ -223,12 +220,12 @@ compare_series(
     model_node_id=primary_node_id,
     imod_node_id=primary_node_id,
     systems=primary_systems,
-).plot(title=f"{primary_node_id} (hoofdsysteem)", grid=True)
+).cumsum().plot(title=f"{primary_node_id} (hoofdsysteem)", grid=True)
 compare_series(
     model=model,
     model_node_id=secondary_node_id,
     imod_node_id=primary_node_id,
     systems=secondary_systems,
-).plot(title=f"{secondary_node_id} (bergend)", grid=True)
+).cumsum().plot(title=f"{secondary_node_id} (bergend)", grid=True)
 
 # %%
