@@ -137,6 +137,7 @@ class AssignOfflineBudgets:
             "bdgpssw",
             "bdgqrun",
         ],
+        ignore_budgets: list[str] = [],
     ) -> Model:
         """Compute budgets for Ribasim model
 
@@ -192,7 +193,12 @@ class AssignOfflineBudgets:
         budgets, model = self._sync_files(model)
 
         # Validate budgets
-        self._validate_budgets(budgets=budgets, primary_budgets=primary_budgets, secondary_budgets=secondary_budgets)
+        self._validate_budgets(
+            budgets=budgets,
+            primary_budgets=primary_budgets,
+            secondary_budgets=secondary_budgets,
+            ignore_budgets=ignore_budgets,
+        )
 
         # Split into primary and secondary basin definition
         print("🪓 split basins into primary and secondary")
@@ -254,9 +260,11 @@ class AssignOfflineBudgets:
 
         return model
 
-    def _validate_budgets(self, budgets: xr.Dataset, primary_budgets: list[str], secondary_budgets: list[str]):
-        expected_budgets = sorted(primary_budgets + secondary_budgets)
-        available_budgets = sorted(list(budgets.data_vars))
+    def _validate_budgets(
+        self, budgets: xr.Dataset, primary_budgets: list[str], secondary_budgets: list[str], ignore_budgets: list[str]
+    ):
+        expected_budgets = set(primary_budgets + secondary_budgets)
+        available_budgets = {i for i in budgets.data_vars if i not in ignore_budgets}
         if not (expected_budgets == available_budgets):
             raise ValueError(
                 f"Budgets in budget-file(s) ({available_budgets}) do not match expected budgets ({expected_budgets}). Evaluate inputs!"

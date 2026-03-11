@@ -1,6 +1,7 @@
 # %%
 
 import geopandas as gpd
+import pandas as pd
 from ribasim import Model
 from ribasim.delwaq import generate, parse
 from ribasim.nodes import basin, level_boundary
@@ -130,6 +131,27 @@ plot_fraction(
 
 plot_fractional_flow(nmodel, node_id, link_id, tracers=default_tracers)
 
-plot_fractional_flow(
-    nmodel, node_id, link_id, tracers=user_tracers, legend_outside_figure=True
-)  # Dit werkt niet vanwege ontbrekende tracers
+# %% [markdown]
+location_id = "ADCP261B"
+df = pd.read_csv(settings.source_data_dir.joinpath("afvoermetingen", "OPP_discharge_2020_now.csv"), index_col=0)
+df = df[(df["location_id"] == location_id) & (df["flag"] <= 2)][["value"]]
+df.rename(columns={"value": "Meting"}, inplace=True)
+df.index = pd.to_datetime(df.index)
+observations = df.resample("D").mean(numeric_only=True)["Meting"]
+ax = plot_fractional_flow(
+    nmodel,
+    node_id,
+    link_id,
+    tracers=user_tracers,
+    legend_outside_figure=True,
+    observations=observations,
+    starttime="2020-1-1",
+    endtime="2025-1-01",
+    title=f"Afvoer Bakelse Aa ({location_id})",
+    ylabel="Afvoer (m3/s)",
+    xlabel="Tijd",
+    ymax=11,
+)
+
+
+# %%
