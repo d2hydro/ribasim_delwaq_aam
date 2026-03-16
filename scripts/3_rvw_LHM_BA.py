@@ -1,6 +1,8 @@
 # %%
 from datetime import datetime
 
+import imod
+import numpy as np
 import pandas as pd
 from ribasim import Model, Node
 from ribasim.nodes import level_boundary
@@ -10,6 +12,83 @@ from ribasim_tools.knmi_daggegevens import update_meteo
 from shapely.geometry import LineString, Point
 
 from ribasim_tools import run_ribasim, settings
+
+
+def get_budgets(
+    assign_offline_budgets,
+    model,
+    primary_budgets,
+    secondary_budgets,
+    ignore_budgets,
+    basin_split: str = "area",
+    basin_subtype: str = "state",
+    basin_metacol: str = "meta_categorie",
+):
+    print("📖 read and validate budgets")
+    budgets, model = assign_offline_budgets._sync_files(model)
+
+    # Validate budgets
+    assign_offline_budgets._validate_budgets(
+        budgets=budgets,
+        primary_budgets=primary_budgets,
+        secondary_budgets=secondary_budgets,
+        ignore_budgets=ignore_budgets,
+    )
+
+    # Split into primary and secondary basin definition
+    print("🪓 split basins into primary and secondary")
+    primary_basin_definition, secondary_basin_definition = assign_offline_budgets.split_basin_definitions(
+        model,
+        basin_split=basin_split,
+        basin_subtype=basin_subtype,
+        basin_metacol=basin_metacol,
+    )
+
+    # create masks
+    print("▦ rasterize basins to masks")
+    array = budgets["bdgriv_sys1"].isel(time=0, drop=True)
+    primary_basin_mask = imod.prepare.rasterize(
+        primary_basin_definition, column="node_id", like=array, fill=-999, dtype=np.int32
+    )
+    secondary_basin_mask = imod.prepare.rasterize(
+        secondary_basin_definition, column="node_id", like=array, fill=-999, dtype=np.int32
+    )
+
+    return budgets, primary_basin_mask, secondary_basin_mask
+
+
+def sum_budgets_per_basin(budgets, basin_mask, nodata=-999):
+    print(f"∑ budgets {list(budgets.data_vars)} rasters to basins")
+    if basin_mask.dims != ("x", "y"):
+        basin_mask = basin_mask.transpose("x", "y")
+
+    var_names = list(budgets.data_vars)
+
+    arr = budgets[var_names].to_array("variable").transpose("time", "variable", "x", "y").values
+    nt, nv, nx, ny = arr.shape
+
+    arr = arr.reshape(nt, nv, nx * ny)
+    mask = basin_mask.values.reshape(nx * ny)
+
+    valid = np.isfinite(mask) & (mask != nodata)
+    ids = mask[valid].astype(int)
+    arr = arr[:, :, valid]
+
+    unique_ids, inv = np.unique(ids, return_inverse=True)
+    nb = len(unique_ids)
+
+    result = np.zeros((nt, nb, nv), dtype=arr.dtype)
+
+    for b in range(nb):
+        sel = inv == b
+        result[:, b, :] = arr[:, :, sel].sum(axis=2)
+
+    index = pd.MultiIndex.from_product([unique_ids, budgets.time.values], names=["node_id", "time"])
+
+    df = pd.DataFrame(result.transpose(1, 0, 2).reshape(nb * nt, nv), index=index, columns=var_names).sort_index()
+
+    return df
+
 
 # %% [markdown]
 
@@ -142,12 +221,42 @@ if not REUSE_BASIN_TIME_TABLE:
         modflow_budgets_path=modflow_budgets_path, metaswap_budgets_path=metaswap_budgets_path
     )
 
-    model = assign_offline_budgets.compute_budgets(
+    # model = assign_offline_budgets.compute_budgets(
+    #     model=model,
+    #     primary_budgets=["bdgriv_sys1"],
+    #     secondary_budgets=["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
+    #     ignore_budgets=["bdgdrn_sys1"],
+    # )
+
+    # dit stuk vervangt de regels hierboven. Later moet dit, samen met de gebruikte functies hierboven, de stukken in compute_budgets() vervangen
+    primary_budgets = ["bdgriv_sys1"]
+    secondary_budgets = ["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"]
+    budgets, primary_basin_mask, secondary_basin_mask = get_budgets(
+        assign_offline_budgets=assign_offline_budgets,
         model=model,
         primary_budgets=["bdgriv_sys1"],
         secondary_budgets=["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
         ignore_budgets=["bdgdrn_sys1"],
     )
+
+    # get a table for primary and secondary basins with budgets (columns) and node_id, time (index)
+    primary_budgets_df = sum_budgets_per_basin(budgets[primary_budgets], primary_basin_mask) / 86400
+    secondary_budgets_df = sum_budgets_per_basin(budgets[secondary_budgets], secondary_basin_mask) / 86400
+
+    # concat all budgets so we can return those for verification
+    budgets_df = pd.concat([primary_budgets_df, secondary_budgets_df]).sort_index()
+
+    # sum all budgets (columns) and create drainage and infiltration series
+    summed_budgets = pd.Series(budgets_df.sum(axis=1))
+    drainage = summed_budgets.clip(upper=0).abs()  # alles <0, teken opklappen (uit modflow is in ribasim)
+    infiltration = summed_budgets.clip(
+        lower=0
+    )  # alles > 0 (infiltratie is in modflow, ontrekking uit ribasim, maar in ribasim positief teken)
+
+    # update basin drainage and infiltration
+    idx = pd.MultiIndex.from_frame(model.basin.time.df[["node_id", "time"]])
+    model.basin.time.df["drainage"] = idx.map(drainage)
+    model.basin.time.df["infiltration"] = idx.map(infiltration)
 
     basin_area = model.basin.area.df.set_index("node_id").at[basin_node_id, "geometry"].area
     df = model.basin.time.df[model.basin.time.df.node_id == basin_node_id].set_index("time")
@@ -162,6 +271,9 @@ if not REUSE_BASIN_TIME_TABLE:
 
 ## Wegschrijven en runnen Ribasim model
 model.write(settings.LHM_BA_RVW_toml_path)
+budgets_df.to_csv(model.filepath.with_name("budgets.csv"))
+budgets_df.to_feather(model.filepath.with_name("budgets.csv"))
+
 run_ribasim(settings.LHM_BA_RVW_toml_path, ribasim_exe=settings.ribasim_exe)
 
 # %% [markdown]
@@ -197,6 +309,7 @@ def compare_series(model: Model, model_node_id: int, imod_node_id: int, systems:
     return compare_df
 
 
+# %%
 # Inlezen waterbalans
 wbal_imod_csv = settings.processed_data_dir.joinpath("wbal", "WBAL_dgeb.csv")
 

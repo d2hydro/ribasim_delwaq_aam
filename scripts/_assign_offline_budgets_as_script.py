@@ -1,10 +1,13 @@
 # %% Script om AssignOfflineBudgets uit te breiden
 
+from datetime import timedelta
+
 import imod
 import numpy as np
 import pandas as pd
 from ribasim import Model
 from ribasim_tools.get_drainage_from_modflow import AssignOfflineBudgets
+from ribasim_tools.knmi_daggegevens import update_meteo
 
 from ribasim_tools import settings
 
@@ -14,20 +17,23 @@ modflow_budgets_path = (
 metaswap_budgets_path = modflow_budgets_path / "MSWAPINPUT"
 
 model = Model.read(settings.LHM_BA_toml_path)
+model.endtime = model.starttime + timedelta(days=365)
+
+
+update_meteo(
+    model,
+    station_id=375,
+    starttime=model.starttime,
+    endtime=model.endtime,
+    recreate_time_table=True,
+    inplace=True,
+)
+
 
 assign_offline_budgets = AssignOfflineBudgets(
     modflow_budgets_path=modflow_budgets_path, metaswap_budgets_path=metaswap_budgets_path
 )
 
-
-# model = assign_offline_budgets.compute_budgets(
-#     model=model,
-#     primary_budgets=["bdgriv_sys1"],
-#     secondary_budgets=["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"],
-#     ignore_budgets=["bdgdrn_sys1"],
-# )
-
-# compute_budgets functie
 
 self = assign_offline_budgets
 basin_split: str = "area"
@@ -37,7 +43,7 @@ primary_budgets = ["bdgriv_sys1"]
 secondary_budgets = ["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"]
 ignore_budgets = ["bdgdrn_sys1"]
 
-
+# %%
 # Synchronize LHM budget and model files
 print("📖 read and validate budgets")
 budgets, model = self._sync_files(model)
@@ -70,69 +76,6 @@ secondary_basin_mask = imod.prepare.rasterize(
 )
 
 # %%
-# _compute_budgets_per_node_id functie die moet worden aangepast
-# sum primairy systems
-primary_summed_budgets = budgets[primary_budgets].to_array("variable").sum("variable", skipna=True).rename("primair")
-
-# sum secondary systems
-secondary_summed_budgets = (
-    budgets[secondary_budgets].to_array("variable").sum("variable", skipna=True).rename("secondair")
-)
-
-# sum per system and node_id
-primary_budgets_per_node_id = (
-    primary_summed_budgets.groupby(primary_basin_mask).sum(dim="stacked_y_x").to_dataframe().unstack(1).transpose()
-)
-primary_budgets_per_node_id.index = primary_budgets_per_node_id.index.droplevel(0)
-primary_budgets_per_node_id = primary_budgets_per_node_id.loc[
-    primary_budgets_per_node_id.index != -999, :
-]  # remove non overlapping budgets
-
-secundary_budgets_per_node_id = (
-    secondary_summed_budgets.groupby(secondary_basin_mask).sum(dim="stacked_y_x").to_dataframe().unstack(1).transpose()
-)
-secundary_budgets_per_node_id.index = secundary_budgets_per_node_id.index.droplevel(0)
-secundary_budgets_per_node_id = secundary_budgets_per_node_id.loc[
-    secundary_budgets_per_node_id.index != -999, :
-]  # remove non overlapping budgets
-
-# combine dataframe's based on node_id
-budgets_per_node_id = pd.concat([primary_budgets_per_node_id, secundary_budgets_per_node_id])
-budgets_per_node_id.index.name = "node_id"
-
-
-# %% alternative function
-primary_budgets_df = (
-    budgets[primary_budgets]
-    .assign_coords(node_id=primary_basin_mask.rename("node_id"))
-    .stack(cell=("x", "y"))
-    .where(lambda ds: ds.node_id != -999, drop=True)
-    .groupby("node_id")
-    .sum("cell")
-    .to_dataframe()
-    .reorder_levels(["node_id", "time"])
-    .sort_index()
-)
-
-secondary_budgets_df = (
-    budgets[secondary_budgets]
-    .assign_coords(node_id=secondary_basin_mask.rename("node_id"))
-    .stack(cell=("x", "y"))
-    .where(lambda ds: ds.node_id != -999, drop=True)
-    .groupby("node_id")
-    .sum("cell")
-    .to_dataframe()
-    .reorder_levels(["node_id", "time"])
-    .sort_index()
-)
-
-# m3/day to m3/sec
-primary_budgets_df /= 86400
-secondary_budgets_df /= 86400
-
-# %%
-import numpy as np
-import pandas as pd
 
 
 def sum_budgets_per_basin(budgets, basin_mask, nodata=-999):
@@ -167,6 +110,24 @@ def sum_budgets_per_basin(budgets, basin_mask, nodata=-999):
     return df
 
 
+# get a table for primary and secondary basins with budgets (columns) and node_id, time (index)
 primary_budgets_df = sum_budgets_per_basin(budgets[primary_budgets], primary_basin_mask) / 86400
 secondary_budgets_df = sum_budgets_per_basin(budgets[secondary_budgets], secondary_basin_mask) / 86400
+
+# concat all budgets so we can return those for verification
+budgets_df = pd.concat([primary_budgets_df, secondary_budgets_df]).sort_index()
+
+
+# sum all budgets (columns) and create drainage and infiltration series
+summed_budgets = pd.Series(budgets_df.sum(axis=1))
+drainage = summed_budgets.clip(upper=0).abs()  # alles <0, teken opklappen (uit modflow is in ribasim)
+infiltration = summed_budgets.clip(
+    lower=0
+)  # alles > 0 (infiltratie is in modflow, ontrekking uit ribasim, maar in ribasim positief teken)
+
+# update basin drainage and infiltration
+idx = pd.MultiIndex.from_frame(model.basin.time.df[["node_id", "time"]])
+model.basin.time.df["drainage"] = idx.map(drainage)
+model.basin.time.df["infiltration"] = idx.map(infiltration)
+
 # %%
