@@ -94,7 +94,7 @@ def sum_budgets_per_basin(budgets, basin_mask, nodata=-999):
 
 # Optioneel hergebruik van bestaande time-table als we níet meteo en drainage willen updaten
 
-REUSE_BASIN_TIME_TABLE = False
+REUSE_BASIN_TIME_TABLE = True
 
 if REUSE_BASIN_TIME_TABLE:
     # inlezen geschreven model
@@ -271,8 +271,9 @@ if not REUSE_BASIN_TIME_TABLE:
 
 ## Wegschrijven en runnen Ribasim model
 model.write(settings.LHM_BA_RVW_toml_path)
-budgets_df.to_csv(model.filepath.with_name("budgets.csv"))
-budgets_df.to_feather(model.filepath.with_name("budgets.csv"))
+if not REUSE_BASIN_TIME_TABLE:
+    budgets_df.to_csv(model.filepath.with_name("budgets.csv"))
+    budgets_df.to_feather(model.filepath.with_name("budgets.csv"))
 
 run_ribasim(settings.LHM_BA_RVW_toml_path, ribasim_exe=settings.ribasim_exe)
 
