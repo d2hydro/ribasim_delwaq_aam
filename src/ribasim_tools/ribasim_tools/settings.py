@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     @property
     def LHM_AAM_toml_path(self) -> Path:
-        return self.source_data_dir.joinpath("lhm_aam", "AaenMaas_2025_9_0", "aam.toml")
+        return self.source_data_dir.joinpath("lhm_aam", "AaenMaas_2026_3_0", "aam.toml")
 
     @property
     def LHM_BA_toml_path(self) -> Path:

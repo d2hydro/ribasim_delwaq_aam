@@ -33,9 +33,24 @@ polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all().buffer
 clip_model(
     model=model,
     polygon=polygon,
-    keep_node_ids=[1942, 1791, 1280, 1846, 72, 709, 367],
-    drop_node_ids=[86, 52, 447],
-    convert_node_types={1942: "LevelBoundary", 1791: "LevelBoundary", 1280: "LevelBoundary", 709: "Outlet"},
+    keep_node_ids=[
+        1942,
+        1791,
+        1280,
+        1846,
+        72,
+        709,
+        367,
+        4087,
+        3554,
+    ],
+    drop_node_ids=[86, 52, 447, 3306, 3655, 3730],
+    convert_node_types={
+        1942: "LevelBoundary",
+        1791: "LevelBoundary",
+        1280: "LevelBoundary",
+        709: "Outlet",
+    },
     default_flow_rate=25,
     inplace=True,
 )
@@ -45,6 +60,10 @@ clip_model(
 #
 # Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
 # Bij `run_ribasim()` print de rekenkern de foute verbindingen
+
 model.use_validation = True
 model.write(settings.LHM_BA_toml_path)
+# model.run()
 run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
+
+# %%

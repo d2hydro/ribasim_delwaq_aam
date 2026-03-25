@@ -9,7 +9,6 @@ ipykernel = "*"
 mypy = "*"
 netcdf4 = "*"
 pip = "*"
-ribasim = "==2025.6.0"
 ruff = "*"
 pydantic = ">=2"
 pydantic-settings = "*"
@@ -17,6 +16,6 @@ pytest = "*"
 python = "3.13.*"
 xugrid = "*"
 
-
 [pypi-dependencies]
+ribasim = "==2026.1.0rc2"
 ribasim_tools = { path = "src/ribasim_tools", editable = true }
