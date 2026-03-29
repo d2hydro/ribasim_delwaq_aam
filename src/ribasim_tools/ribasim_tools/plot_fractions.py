@@ -44,18 +44,48 @@ def _get_colors(columns: list[str], user_colors: dict) -> list[str]:
     return colors
 
 
-def _make_up_legend(ax, legend_outside_figure) -> None:
-    """Make up figure legend."""
-    # we reverse handles and labels so they match stack-order (bottom in stack is bottom in legend)
-    handles, labels = ax.get_legend_handles_labels()
+def _make_up_legend(ax, legend_outside_figure: bool) -> None:
+    """Maak 1 gecombineerde legenda voor alle assen."""
+    handles, labels = [], []
 
-    # optional placing outside figure (so legend won't be placed on top of stack)
+    for a in ax.figure.axes:
+        h, l = a.get_legend_handles_labels()
+        handles.extend(h)
+        labels.extend(l)
+
+    # dubbele labels verwijderen, volgorde behouden
+    seen = set()
+    uniq_handles = []
+    uniq_labels = []
+    for h, l in zip(handles, labels):
+        if l and l not in seen:
+            seen.add(l)
+            uniq_handles.append(h)
+            uniq_labels.append(l)
+
+    # bestaande legends weghalen
+    for a in ax.figure.axes:
+        leg = a.get_legend()
+        if leg is not None:
+            leg.remove()
+
+    fig = ax.figure
+
     if legend_outside_figure:
-        ax.legend(
-            handles[::-1], labels[::-1], loc="center left", bbox_to_anchor=(1.02, 0.5), borderaxespad=0.0, frameon=False
+        fig.subplots_adjust(right=0.78)
+        fig.legend(
+            uniq_handles[::-1],
+            uniq_labels[::-1],
+            loc="center left",
+            bbox_to_anchor=(0.85, 0.5),
+            frameon=False,
         )
     else:
-        ax.legend(handles[::-1], labels[::-1])
+        ax.legend(
+            uniq_handles[::-1],
+            uniq_labels[::-1],
+            frameon=False,
+        )
 
 
 def _plot_figure(
@@ -69,6 +99,7 @@ def _plot_figure(
     starttime: DateLike | None = None,
     endtime: DateLike | None = None,
     ymax: float | None = None,
+    add_legend: bool=True
 ) -> None:
     """Reusable plotting function for fractional flow plots."""
     # Clip time-series if starttime/endtime provided
@@ -83,6 +114,7 @@ def _plot_figure(
         grid=True,
         color=_get_colors(pivot_df.columns, user_colors=user_colors),
         label=False,
+        legend=False,
     )
     if ymax is not None:
         ax.set_ylim(top=ymax)
@@ -104,7 +136,8 @@ def _plot_figure(
 
         ax.set_ylim(top=ymax)
 
-    _make_up_legend(ax, legend_outside_figure)
+    if add_legend:
+        _make_up_legend(ax, legend_outside_figure)
 
     return ax
 
@@ -122,6 +155,7 @@ def plot_fraction(
     title: str | None = None,
     ylabel: str = "Fraction",
     xlabel: str = "Time",
+    add_legend: bool = True,
 ) -> None:
     """Plot Delwaq fractions for a specific node from a Ribasim model
 
@@ -172,6 +206,7 @@ def plot_fraction(
         legend_outside_figure=legend_outside_figure,
         starttime=starttime,
         endtime=endtime,
+        add_legend=add_legend
     )
 
 

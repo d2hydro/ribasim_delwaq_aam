@@ -1,0 +1,1 @@
+pixi run -e spyder spyder

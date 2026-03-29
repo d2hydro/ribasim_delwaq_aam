@@ -10,7 +10,8 @@ from ribasim_tools.check_model import check_level_boundaries_for_delwaq
 from ribasim_tools.plot_fractions import plot_fraction, plot_fractional_flow
 from ribasim_tools.read_delwaq_fractions import check_nodes_continuity
 
-from ribasim_tools import run_delwaq, run_ribasim, settings
+from ribasim_tools import run_delwaq, run_ribasim, settings, read_flow_rate
+from ribasim_tools.plot_fractions import _make_up_legend
 
 # %% [markdown]
 period: timedelta | None = timedelta(days=365)
@@ -33,15 +34,15 @@ check_level_boundaries_for_delwaq(model)
 time = [model.starttime] * 6
 
 model.level_boundary.concentration = level_boundary.Concentration(
-    node_id=[33, 53, 1280, 1568, 1958, 3397],
+    node_id=[53, 1280, 5139, 1568, 1958, 33],
     time=time,
     substance=[
-        "Defensiekanaal",
         "Kanaal_van_Deurne",
         "Kanaal_van_Deurne",
-        "Defensiekanaal",
-        "Defensiekanaal",
         "Kanaal_van_Deurne",
+        "Defensiekanaal",
+        "Defensiekanaal",
+        "Defensiekanaal",
     ],
     concentration=[1] * len(time),
 )
@@ -89,13 +90,17 @@ mask = (budgets_df.index.get_level_values("time") >= model.starttime) & (
     budgets_df.index.get_level_values("time") <= model.endtime
 )
 budgets_df = budgets_df[mask]
-# sum all budgets (columns) and create drainage and infiltration series
-drainage_budgets_df = budgets_df.clip(upper=0).abs()
-drainage_sum = pd.Series(drainage_budgets_df.sum(axis=1))
 
 # TODO: dit netjes schaalbaar maken met script 3_rvw_LHM_BA.py
 primary_budgets = ["bdgriv_sys1"]
-secondary_budgets = ["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpssw", "bdgqrun"]
+secondary_budgets = ["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpsswm3",]
+surface_runoff_budgets = ["bdgqrunm3"]
+
+
+# sum all budgets (columns) and create drainage and infiltration series
+drainage_budgets_df = budgets_df[secondary_budgets].clip(upper=0).abs()
+drainage_sum = pd.Series(drainage_budgets_df.sum(axis=1))
+
 
 secondary_basin_ids = model.basin.node.df[model.basin.node.df["meta_categorie"] == "bergend"].index.values
 primary_basin_ids = model.basin.node.df[model.basin.node.df["meta_categorie"] != "bergend"].index.values
@@ -122,12 +127,21 @@ concentration_df = pd.concat(
             drainage=[1] * len(primary_basin_ids),
             precipitation=[0] * len(primary_basin_ids),
             surface_runoff=[0] * len(primary_basin_ids),
-        ).df
-    ]
-    + [make_budget_concentration_table(concentrations, secondary_basin_ids, budget) for budget in secondary_budgets],
+        ).df # drainage op het primaire systeem
+    ] +
+    [
+        basin.Concentration(
+            node_id=secondary_basin_ids,
+            time=[model.starttime] * len(secondary_basin_ids),
+            substance=surface_runoff_budgets  * len(secondary_basin_ids),
+            drainage=[0] * len(secondary_basin_ids),
+            precipitation=[0] * len(secondary_basin_ids),
+            surface_runoff=[1] * len(secondary_basin_ids),
+        ).df # is QRUNm3, dus secundaire systeem
+    ] + 
+    [make_budget_concentration_table(concentrations, secondary_basin_ids, budget) for budget in secondary_budgets],
     ignore_index=True,
 )
-
 
 model.basin.concentration.df = concentration_df
 
@@ -156,7 +170,7 @@ assert specs.exit_code == 0
 
 # Parsen en controle van Delwaq resultaten. Continuity check voor alle nodes.
 
-nmodel = parse(settings.LHM_BA_Delwaq_toml_path, graph, substances, output_folder=settings.LHM_BA_Delwaq_output_dir)
+nmodel = parse(settings.LHM_BA_Delwaq_toml_path, graph, substances, output_folder=settings.LHM_BA_Delwaq_output_dir, to_input=True)
 
 node_ids = check_nodes_continuity(nmodel)
 
@@ -183,9 +197,13 @@ plot_fraction(
     legend_outside_figure=True,
 )
 
+
+
 plot_fractional_flow(nmodel, node_id, link_id, tracers=default_tracers)
 
 # %% [markdown]
+
+# old-style gefractioneerde flow
 location_id = "ADCP261B"
 df = pd.read_csv(settings.source_data_dir.joinpath("afvoermetingen", "OPP_discharge_2020_now.csv"), index_col=0)
 df = df[(df["location_id"] == location_id) & (df["flag"] <= 2)][["value"]]
@@ -198,8 +216,8 @@ ax = plot_fractional_flow(
     link_id,
     tracers=user_tracers,
     legend_outside_figure=True,
-    observations=None,
-    starttime=model.starttime,
+    observations=observations,
+    starttime="2023-01-01",
     endtime=model.endtime - timedelta(days=1),
     title=f"Afvoer Bakelse Aa ({location_id})",
     ylabel="Afvoer (m3/s)",
@@ -208,4 +226,29 @@ ax = plot_fractional_flow(
 )
 
 
-# %%
+# %% [markdown]
+
+# new style fractie-plot met metingen
+start_time = starttime = "2023-01-01"
+endtime = model.endtime - timedelta(days=1)
+
+simulation = read_flow_rate(model=model, link_id = link_id)
+observations_selec = observations.reindex(simulation.index)
+
+ax = plot_fraction(
+    model=nmodel,
+    node_id=node_id,
+    tracers=user_tracers,
+    legend_outside_figure=True,
+    starttime = start_time,
+    endtime = endtime,
+    add_legend=False
+)
+ax2 = ax.twinx()
+ax2.set_ylabel("Afvoer (m3/s)")
+
+ax2.plot(observations_selec.index, observations_selec.values, label=observations_selec.name, linestyle=":",
+            color="red",
+            linewidth=1,)
+ax2.plot(simulation.index, simulation.values, color="black", linewidth=1, label="Ribasim")
+_make_up_legend(ax, legend_outside_figure=True)

@@ -2,6 +2,7 @@ import logging
 
 import pandas as pd
 from ribasim import Model
+from ribasim_tools.read_ribasim_flow_rate import read_flow_rate
 
 logger = logging.getLogger(__name__)
 
@@ -111,9 +112,8 @@ def read_fractional_flow(
         )
 
     # Get flow rates for the link and multiply with fractions
-    df = pd.read_feather(model.toml_path.parent.joinpath("results", "flow.arrow"))
-    df = df[df.link_id == link_id].set_index("time")
-    fractional_flow_pivot = fraction_pivot.mul(df["flow_rate"], axis=0)
+    flow_rate = read_flow_rate(model=model, link_id=link_id)
+    fractional_flow_pivot = fraction_pivot.mul(flow_rate, axis=0)
 
     return fractional_flow_pivot
 

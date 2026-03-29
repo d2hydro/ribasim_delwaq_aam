@@ -7,6 +7,7 @@ from ribasim_tools.read_delwaq_fractions import check_nodes_continuity, read_fra
 from ribasim_tools.run_delwaq import run_delwaq
 from ribasim_tools.run_ribasim import run_ribasim
 from ribasim_tools.settings import settings
+from ribasim_tools.read_ribasim_flow_rate import read_flow_rate
 
 __all__ = [
     "clip_model",
@@ -18,4 +19,5 @@ __all__ = [
     "run_ribasim",
     "run_delwaq",
     "settings",
+    "read_flow_rate"
 ]

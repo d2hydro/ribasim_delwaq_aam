@@ -78,22 +78,25 @@ def _compute_budgets_per_basin(budgets: xr.Dataset, basin_mask: xr.DataArray, no
 class AssignOfflineBudgets:
     def __init__(
         self,
-        zarr_budgets_path: Path | str,
+        budgets: Path | str | xr.Dataset,
     ):
-        self.zarr_budgets_path = Path(zarr_budgets_path)
         """Assign offline budgets from MODFLOW-MetaSWAP budget files.
 
         Parameters
         ----------
-        zarr_budgets_path : Path | str
+        zarr_budgets_path : Path | str | DataStore
             Zarr store directory with MODFLOW-MetaSWAP budgets
         """
-        if not self.zarr_budgets_path.exists():
-            raise FileNotFoundError(
-                f"You can't compute budgets if you don't have the zarr_budgets in a zip-file: {zarr_budgets_path}"
-                "Download a copy"
-                "Alternatively go to: https://github.com/Deltares/Ribasim-NL/blob/main/scripts/add_lhm_budgets/get_data_LHM_run.py to see how you can create one."
-            )
+        
+        if not isinstance(budgets, xr.Dataset):
+            budgets = Path(budgets)
+            if not budgets.exists():
+                raise FileNotFoundError(
+                    f"You can't compute budgets if you don't have the zarr_budgets in a zip-file: {budgets}"
+                    "Download a copy"
+                    "Alternatively go to: https://github.com/Deltares/Ribasim-NL/blob/main/scripts/add_lhm_budgets/get_data_LHM_run.py to see how you can create one."
+                )
+        self.budgets = budgets
 
     def compute_budgets(
         self,
@@ -269,14 +272,17 @@ class AssignOfflineBudgets:
         if not isinstance(model, Model):
             model = Model.read(model)
 
-        try:
-            budgets = xr.open_zarr(str(self.zarr_budgets_path)).sel(time=slice(model.starttime, model.endtime))
-        except Exception as e:
-            print("ERROR: you have to process your budgets to a zarr-storage first!")
-            print(
-                "GoTo: https://github.com/Deltares/Ribasim-NL/blob/main/scripts/add_lhm_budgets/get_data_LHM_run.py to see how you can create one."
-            )
-            raise (e)
+        if isinstance(self.budgets, xr.Dataset):
+            budgets = self.budgets
+        else:
+            try:
+                budgets = xr.open_zarr(str(self.zarr_budgets_path)).sel(time=slice(model.starttime, model.endtime))
+            except Exception as e:
+                print("ERROR: you have to process your budgets to a zarr-storage first!")
+                print(
+                    "GoTo: https://github.com/Deltares/Ribasim-NL/blob/main/scripts/add_lhm_budgets/get_data_LHM_run.py to see how you can create one."
+                )
+                raise (e)
 
         return budgets, model
 
@@ -491,7 +497,7 @@ class AssignOfflineBudgets:
     def _validate_meta_basin_column(self, df: pd.DataFrame, basin_metacol: str, expected_values: set):
         """Validate if all values as expected are present in basin_metacol"""
         exception = ""
-        if df[basin_metacol].notna().all():
+        if df[basin_metacol].isna().any():
             exception += " contains missings;"
 
         unexpected = [i for i in df[basin_metacol].unique() if i not in expected_values]
@@ -499,4 +505,4 @@ class AssignOfflineBudgets:
             exception += f" contains unexpeced values {unexpected}, check `primary_values` and `secondary_values` input"
 
         if exception:
-            raise ValueError(f"{basin_metacol} {exception}")
+            raise ValueError(f"{basin_metacol}{exception}")

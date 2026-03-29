@@ -41,10 +41,8 @@ clip_model(
         72,
         709,
         367,
-        4087,
-        3554,
     ],
-    drop_node_ids=[86, 52, 447, 3306, 3655, 3730],
+    drop_node_ids=[86, 52, 447, 3306, 3655, 3730, 3653, 3302, 3726],
     convert_node_types={
         1942: "LevelBoundary",
         1791: "LevelBoundary",
@@ -61,7 +59,7 @@ clip_model(
 # Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
 # Bij `run_ribasim()` print de rekenkern de foute verbindingen
 
-model.use_validation = True
+model.use_validation = False
 model.write(settings.LHM_BA_toml_path)
 # model.run()
 run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
