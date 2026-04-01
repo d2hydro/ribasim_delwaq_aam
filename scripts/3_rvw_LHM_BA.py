@@ -15,7 +15,7 @@ from ribasim_tools import run_ribasim, settings, read_flow_rate
 
 # Optioneel hergebruik van bestaande time-table als we níet meteo en drainage willen updaten
 
-REUSE_BASIN_TIME_TABLE = True
+REUSE_BASIN_TIME_TABLE = False
 
 if REUSE_BASIN_TIME_TABLE:
     # inlezen geschreven model
@@ -204,9 +204,10 @@ wbal_imod_csv = settings.processed_data_dir.joinpath("wbal", "WBAL_dgeb.csv")
 df = pd.read_csv(wbal_imod_csv)
 df["DATE_TIME"] = pd.to_datetime(df["DATE_TIME"], format="%Y%m%d%H%M%S")
 
-primary_node_id = 1216
+primary_node_id = 1126
 primary_systems = ["bdgriv_sys1"]
 secondary_systems = ["bdgriv_sys2", "bdgdrn_sys2", "bdgdrn_sys3"]  # Let op (!) "bdgpssw", "bdgqrun" missen
+sr_systems = ["bdgqrunm3"]
 
 # vinden secondary_node_id
 poly = model.basin.area.df.set_index("node_id").at[primary_node_id, "geometry"]
@@ -228,6 +229,14 @@ compare_series(
     imod_node_id=primary_node_id,
     systems=secondary_systems,
 ).cumsum().plot(title=f"{secondary_node_id} (bergend)", grid=True, ylabel= "cum. afvoer [m3/s]")
+
+
+compare_series(
+    model=model,
+    model_node_id=secondary_node_id,
+    imod_node_id=primary_node_id,
+    systems=sr_systems,
+).cumsum().plot(title=f"{secondary_node_id} (surface runoff)", grid=True, ylabel= "cum. afvoer [m3/s]")
 
 # %%
 area = model.basin.area.df.union_all().area
@@ -268,3 +277,19 @@ secondary_imod = (
 compare_df = pd.concat([secondary_ribasim, secondary_imod], axis=1)
 compare_df.columns = ["Basin (drainage/infiltratie)", f"iMOD ({','.join(secondary_systems)})"]
 compare_df.cumsum().plot(title="totaal bergend systeem", grid=True, ylabel= "afvoer [mm]")
+
+
+
+sr_imod = (
+    -(
+        imod_sum_df[[f"{i.upper()}_OUT" for i in sr_systems]].sum(axis=1)
+        + imod_sum_df[[f"{i.upper()}_IN" for i in sr_systems]].sum(axis=1)
+    )
+).abs() * 1000 / area
+
+
+sr_ribasim = model.basin.time.df[model.basin.time.df.node_id.isin(secondary_basin_node_ids)][["time","surface_runoff"]].groupby("time").sum()["surface_runoff"]
+
+compare_df = pd.concat([sr_ribasim, sr_imod], axis=1)
+compare_df.columns = ["Basin (surface_runoff)", f"iMOD ({','.join(sr_systems)})"]
+compare_df.cumsum().plot(title="totaal surface_runoff", grid=True, ylabel= "afvoer [mm]")

@@ -44,7 +44,7 @@ def _get_colors(columns: list[str], user_colors: dict) -> list[str]:
     return colors
 
 
-def _make_up_legend(ax, legend_outside_figure: bool) -> None:
+def _make_up_legend(ax, legend_outside_figure: bool, legend_x_anchor=0.85) -> None:
     """Maak 1 gecombineerde legenda voor alle assen."""
     handles, labels = [], []
 
@@ -77,7 +77,7 @@ def _make_up_legend(ax, legend_outside_figure: bool) -> None:
             uniq_handles[::-1],
             uniq_labels[::-1],
             loc="center left",
-            bbox_to_anchor=(0.85, 0.5),
+            bbox_to_anchor=(legend_x_anchor, 0.5),
             frameon=False,
         )
     else:
