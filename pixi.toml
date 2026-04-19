@@ -13,11 +13,11 @@ pip = "*"
 pydantic = ">=2"
 pydantic-settings = "*"
 pytest = "*"
+ribasim = "==2026.1.0"
 ruff = "*"
 xugrid = "*"
 
 [pypi-dependencies]
-ribasim = "==2026.1.0rc2"
 ribasim_tools = { path = "src/ribasim_tools", editable = true }
 
 [feature.spyder.dependencies]

@@ -1,7 +1,11 @@
 # Scripts
 
-Aantal scripts gegerereerd t.b.v. beknopte analyse/debugging HSA model.
+Aantal scripts gegerereerd t.b.v. beknopte analyse/debugging HSA model. Deze scripts horen bij de presentatie `Beknopte analyse HSA model` welke is uitgevoerd begin 2026 (gestuurd op 12-1-2026)
+Let op(!); deze scripts zijn niet meer getest-gedraaid met Ribasim 2026.1.0 (en verder):
+- Deze versie was niet beschikbaar bij het uitvoeren van de analyse
+- Er is geen enkele reden om aan te nemen dat de conclusies uit de analyse anders uitpakt bij gebruik van 2026.1.0 
 
+Overzicht van de acties die worden uitgevoerd per script:
 - 1a_sanitize_model.py -> Converteren Ribasim 2025.3.0 model naar 2025.6.0
 - 1b_fix_qh_extrapol.py -> Extrapoleren Qh relaties om model stabieler te maken (basismodel = 1a)
 - 1c_sanitize_model fix_cyclic.py -> time wordt in Qh relaties niet meer cyclic toegepast. Tijd extrapoleren zodat model rekent als in 2025.3.0 (basismodel = 1b)

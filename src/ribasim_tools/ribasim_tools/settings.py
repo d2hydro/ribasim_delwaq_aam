@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 def find_env_file(start: Path | None = None, filename: str = ".env") -> Path | None:
     current = (start or Path(__file__)).resolve().parent
 
@@ -16,17 +17,18 @@ def find_env_file(start: Path | None = None, filename: str = ".env") -> Path | N
 
 _ENV_FILE = find_env_file()
 
+
 class Settings(BaseSettings):
     source_data_dir: Path = Path(__file__).parents[3] / "source_data"
     processed_data_dir: Path = Path(__file__).parents[3] / "processed_data"
-    ribasim_exe: Path = Path("ribasim")
+    ribasim_home: Path = Path("ribasim")
     run_dimr_bat: Path = Path(
         r"c:\Program Files\Deltares\D-HYDRO Suite 2025.02 1D2D\plugins\DeltaShell.Dimr\kernels\x64\bin\run_dimr.bat"
     )
     model_config = SettingsConfigDict(
-       env_file=str(_ENV_FILE) if _ENV_FILE else None,
-       extra="ignore",
-   )
+        env_file=str(_ENV_FILE) if _ENV_FILE else None,
+        extra="ignore",
+    )
 
     ###############################
     # 📁 LHM Aa en Maas file paths
@@ -34,7 +36,7 @@ class Settings(BaseSettings):
 
     @property
     def LHM_AAM_toml_path(self) -> Path:
-        return self.source_data_dir.joinpath("lhm_aam", "AaenMaas_20260325_no_junctions", "aam.toml")
+        return self.source_data_dir.joinpath("lhm_aam", "AaenMaas_2026_4_0", "aam.toml")
 
     @property
     def LHM_BA_toml_path(self) -> Path:

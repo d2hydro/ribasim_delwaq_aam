@@ -2,20 +2,20 @@
 from datetime import datetime
 
 import pandas as pd
-from ribasim import Model, Node
+from ribasim import Model, Node, run_ribasim
 from ribasim.nodes import level_boundary
 from ribasim_tools.check_model import check_level_boundaries_for_delwaq
 from ribasim_tools.knmi_daggegevens import update_meteo
 from ribasim_tools.modflow_metaswap import read_budgets, AssignOfflineBudgets
 from shapely.geometry import LineString, Point
 
-from ribasim_tools import run_ribasim, settings, read_flow_rate
+from ribasim_tools import settings, read_flow_rate
 
 # %% [markdown]
 
 # Optioneel hergebruik van bestaande time-table als we níet meteo en drainage willen updaten
 
-REUSE_BASIN_TIME_TABLE = False
+REUSE_BASIN_TIME_TABLE = True
 
 if REUSE_BASIN_TIME_TABLE:
     # inlezen geschreven model
@@ -36,55 +36,35 @@ if REUSE_BASIN_TIME_TABLE:
     model.endtime = datetime(2024, 12, 31)
     model.basin.time.df = basin_time_df
 
-# %% markdown
-
-## Fixen basin profiles
-#
-# Basin-profiles voor hoofdwater en stromend water bevatten veel teveel opperlakte; 90% en 10% respectievelijk. We maken hier 1% van voor nu
-
-node_ids = model.basin.node.df[model.basin.node.df.meta_categorie == "hoofdwater"].index.to_list()
-model.basin.profile.df.loc[model.basin.profile.df.node_id.isin(node_ids), "area"] /= 90
-node_ids = model.basin.node.df[model.basin.node.df.meta_categorie == "doorgaand"].index.to_list()
-model.basin.profile.df.loc[model.basin.profile.df.node_id.isin(node_ids), "area"] /= 10
-
 # %% [markdown]
 
 ## Bewerken inlaatcapaciteiten bij Kanaal van Deurne en Defensiekanaal
-#
-# De Outlets bij het Kanaal van Deurne en Defensiekanaal krijgen een inlaatcapaciteit die overeen komt met
-# de gewenste aanvoerdebieten zoals gegeven door Luuk van Gerwen op 7-10-2025
 #
 # Voor validiteit van Delwaq splitsen we LevelBoundary # 1280 (Kanaal van Deurne) in 2 LevelBoundaries, omdat een 1 LevelBoundary mag linken naar max 1 connector-node
 #
 # Aan het einde van dit block controlleren we de validiteit van de overige boundary-nodes
 
 level_kanalen = 30.5
-# flow_rates = [(0.3, 367), (0.1, 2029), (0.025, 2034), (0.025, 601), (0.065, 156), (0.01, 358), (0.03, 331)]
-# for flow_rate, primary_node_id in flow_rates:
-#     model.outlet.static.df.loc[model.outlet.static.df.node_id == primary_node_id, "flow_rate"] = flow_rate
-#     model.outlet.static.df.loc[model.outlet.static.df.node_id == primary_node_id, "max_downstream_level"] = pd.NA
 
-# verplaatsen node 1280 vlakbij outlet node 367
+# verplaatsen node 1280 vlakbij outlet node 3090
 model.node.df.loc[1280, "geometry"] = Point(
-    model.outlet[367].geometry.x + 10, model.outlet[367].geometry.y
+    model.outlet[3090].geometry.x + 10, model.outlet[3090].geometry.y
 )
-model.link.df.loc[1352, "geometry"] = LineString([model.level_boundary[1280].geometry, model.outlet[367].geometry])
+model.link.df.loc[2142, "geometry"] = LineString([model.level_boundary[1280].geometry, model.outlet[3090].geometry])
 
-# Nieuwe levelboundary naast outlet node 2029 en link 2134 hier naartoe leiden
-outlet_node = model.outlet[3090]
-
+# van knoop 4109 maken we een boundary die we verbinden met 367
+geometry = model.junction[4109].geometry
+model.remove_node(4109)
 
 boundary_node = model.level_boundary.add(
-    Node(geometry=Point(outlet_node.geometry.x + 10, outlet_node.geometry.y)),
+    Node(geometry=geometry),
     tables=[level_boundary.Static(level=[level_kanalen])],
 )
-model.link.df.loc[2142, "from_node_id"] = boundary_node.node_id
-model.link.df.loc[2142, "geometry"] = LineString([boundary_node.geometry, outlet_node.geometry])
+
+outlet_node = model.outlet[367]
+model.link.add(boundary_node, outlet_node)
 
 # set upstream levels voor alle level boundaries bovenstrooms inlaten
-# node_ids = [model.link.df.set_index("to_node_id").at[flow_rate[1], "from_node_id"] for flow_rate in flow_rates]
-# node_ids = [i for i in node_ids if i in model.level_boundary.node.df.index]
-# model.level_boundary.static.df.loc[model.level_boundary.static.df.node_id.isin(node_ids), "level"] = level_kanalen
 
 # Set level Leijsingloop
 model.level_boundary.static.df.loc[model.level_boundary.static.df.node_id == 1791, "level"] = 20
@@ -158,12 +138,13 @@ if not REUSE_BASIN_TIME_TABLE:
 # %% [markdown]
 
 ## Wegschrijven en runnen Ribasim model
+model.use_validation = False
 model.write(settings.LHM_BA_RVW_toml_path)
 if not REUSE_BASIN_TIME_TABLE:
     budgets_df.to_csv(model.filepath.with_name("budgets.csv.zip"))
     budgets_df.to_feather(model.filepath.with_name("budgets.arrow"))
 
-run_ribasim(settings.LHM_BA_RVW_toml_path, ribasim_exe=settings.ribasim_exe)
+run_ribasim(settings.LHM_BA_RVW_toml_path, ribasim_home=settings.ribasim_home)
 
 # %% [markdown]
 
@@ -174,8 +155,6 @@ read_flow_rate(model, link_id=1986).plot(
 )
 
 # %% [markdown]
-
-
 def compare_series(model: Model, model_node_id: int, imod_node_id: int, systems: list[str]):
     # Compare primary system (drainage is positive, infiltration is negative)
     model_df = model.basin.time.df[model.basin.time.df.node_id == model_node_id].set_index("time")

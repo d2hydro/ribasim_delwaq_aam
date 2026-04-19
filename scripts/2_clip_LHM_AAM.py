@@ -1,8 +1,8 @@
 # %%
 import geopandas as gpd
-from ribasim import Model
+from ribasim import Model, run_ribasim
 
-from ribasim_tools import clip_model, run_ribasim, settings
+from ribasim_tools import clip_model, settings
 
 # %% [markdown]
 
@@ -34,19 +34,20 @@ clip_model(
     model=model,
     polygon=polygon,
     keep_node_ids=[
-        1942,
-        1791,
-        1280,
-        1846,
-        72,
-        709,
-        367,
+        72,  # uitlaat
+        367,  # inlaat Oude Aa @ kanaal van deurne
+        709,  # Essenloopje (Kaweise Loop)
+        1280,  # Kanaal van Deurne
+        1791,  # loopje afwaterend Oude Aa
+        1846,  # Basin bij Kaweise Loop
+        1942,  # Essenloopje
+        4109,  # Junction bij Kanaal v Deurne
     ],
     drop_node_ids=[86, 52, 447, 3306, 3655, 3730, 3653, 3302, 3726],
     convert_node_types={
-        1942: "LevelBoundary",
-        1791: "LevelBoundary",
-        1280: "LevelBoundary",
+        1942: "LevelBoundary",  # essenloopje
+        1791: "LevelBoundary",  # lopoje afwaterend Oude Aa
+        1280: "LevelBoundary",  # Kanaal van deurne
         709: "Outlet",
     },
     default_flow_rate=25,
@@ -59,9 +60,8 @@ clip_model(
 # Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
 # Bij `run_ribasim()` print de rekenkern de foute verbindingen
 
-model.use_validation = False
+model.use_validation = True
 model.write(settings.LHM_BA_toml_path)
-# model.run()
-run_ribasim(model.filepath, ribasim_exe=settings.ribasim_exe)
+run_ribasim(model.filepath, ribasim_home=settings.ribasim_home)
 
 # %%
