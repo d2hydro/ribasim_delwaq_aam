@@ -1,6 +1,5 @@
 """Assign offline MODFLOW-MetaSWAP budgets (LHM zarr or local IDF files) to Ribasim Basin nodes."""
 
-import warnings
 from pathlib import Path
 
 import geopandas as gpd
@@ -11,14 +10,10 @@ import shapely
 import xarray as xr
 from ribasim import Model
 from tqdm import tqdm
-from xarray.core.dataarray import DataArray
-from xarray.core.dataset import Dataset
-
-from ribasim_tools.modflow_metaswap.assign_fractions_from_budgets import assign_fractions_from_budgets
 
 
-def _crop_to_gdf(da: "xr.DataArray | xr.Dataset", gdf: gpd.GeoDataFrame) -> DataArray | Dataset:
-    """Crop a DataArray or Dataset to a gdf.extent (total_bounds)
+def _crop_to_gdf(da: xr.DataArray, gdf: gpd.GeoDataFrame):
+    """Crop a DataArray to a gdf.extent (total_bounds)
 
     Why? As LHM covers NL and we often compute budgets for 1 authority only.
 
@@ -36,9 +31,9 @@ def _crop_to_gdf(da: "xr.DataArray | xr.Dataset", gdf: gpd.GeoDataFrame) -> Data
     )
 
 
-def _compute_budgets_per_basin(budgets: xr.Dataset, basin_mask: xr.DataArray, nodata=-999) -> pd.DataFrame:
+def _compute_budgets_per_basin(budgets: xr.Dataset, basin_mask: xr.DataArray, nodata=-999):
     """Sum all modflow budgets per basin_id over a basin_mask."""
-    print(f"sum budgets {list(budgets.data_vars)} rasters to basins")
+    print(f"∑ budgets {list(budgets.data_vars)} rasters to basins")
 
     if basin_mask.dims != ("x", "y"):
         basin_mask = basin_mask.transpose("x", "y")
@@ -84,14 +79,15 @@ class AssignOfflineBudgets:
     def __init__(
         self,
         budgets: Path | str | xr.Dataset,
-    ) -> None:
+    ):
         """Assign offline budgets from MODFLOW-MetaSWAP budget files.
 
         Parameters
         ----------
-        budgets : Path | str | xr.Dataset
-            Zarr store directory with MODFLOW-MetaSWAP budgets, or an xarray Dataset
+        zarr_budgets_path : Path | str | DataStore
+            Zarr store directory with MODFLOW-MetaSWAP budgets
         """
+        
         if not isinstance(budgets, xr.Dataset):
             budgets = Path(budgets)
             if not budgets.exists():
@@ -108,13 +104,19 @@ class AssignOfflineBudgets:
         basin_split: str = "area",
         basin_subtype: str = "state",
         basin_metacol: str = "meta_categorie",
-        primary_values: set[str] | None = None,
-        secondary_values: set[str] | None = None,
-        primary_budgets: set[str] | None = None,
-        secondary_budgets: set[str] | None = None,
-        surface_runoff_budgets: set[str] | None = None,
-        assign_fractions: bool = False,
-        fraction_prefix: str | None = None,
+        primary_values: set[str] = {"hoofdwater", "doorgaand"},
+        secondary_values: set[str] = {"bergend"},
+        primary_budgets: set[str] = {"bdgriv_sys1", "bdgriv_sys4", "bdgriv_sys5"},
+        secondary_budgets: set[str] = {
+            "bdgriv_sys2",  # TODO @gijsber, please verify as this was left-out in the code of the previous version (why?). I've added this as described in the docstring
+            "bdgriv_sys3",
+            "bdgriv_sys6",
+            "bdgdrn_sys1",
+            "bdgdrn_sys2",
+            "bdgdrn_sys3",
+            "bdgpsswm3",
+        },
+        surface_runoff_budgets: set[str] = {"bdgqrunm3"},
     ) -> tuple[Model, pd.DataFrame]:
         """Compute budgets for Ribasim model.
 
@@ -169,10 +171,6 @@ class AssignOfflineBudgets:
         surface_runoff_budgets: set[str], optional
             set of budgets that are to be summed to secondary surface_runoff
              by default {"bdgqrunm3"}
-        assign_fractions: bool, optional
-             if True, fractions from budgets will be calculated and assigned to model.basin.concentration.df, default False
-        fraction_prefix: str, optional
-             if assign_fractions, then user is to define a fraction prefix here, else it kan be kept None. default None
 
         Returns
         -------
@@ -180,32 +178,14 @@ class AssignOfflineBudgets:
             Model and with MODFLOW-MetaSWAP budgets per node_id and timestamp. These can be used for verification and/or to compute fraction tracer/concentrations
         """
         # Synchronize LHM budget and model files
-        if surface_runoff_budgets is None:
-            surface_runoff_budgets = {"bdgqrunm3"}
-        if secondary_budgets is None:
-            secondary_budgets = {
-                "bdgriv_sys2",
-                "bdgriv_sys3",
-                "bdgriv_sys6",
-                "bdgdrn_sys1",
-                "bdgdrn_sys2",
-                "bdgdrn_sys3",
-                "bdgpsswm3",
-            }
-        if primary_budgets is None:
-            primary_budgets = {"bdgriv_sys1", "bdgriv_sys4", "bdgriv_sys5"}
-        if secondary_values is None:
-            secondary_values = {"bergend"}
-        if primary_values is None:
-            primary_values = {"hoofdwater", "doorgaand"}
-        print("read and validate budgets and model")
+        print("📖 read and validate budgets and model")
         budgets, model = self._sync_files(model)  # read model and budgets form zarr-store
         self._validate_budgets(
             budgets, primary_budgets, secondary_budgets, surface_runoff_budgets
         )  # check if all data-variables are present
 
         # Split into primary and secondary basin definition
-        print("split basins into primary and secondary")
+        print("🪓 split basins into primary and secondary")
         primary_basin_definition, secondary_basin_definition = self._split_basin_definitions(
             model,
             basin_split=basin_split,
@@ -215,7 +195,7 @@ class AssignOfflineBudgets:
             secondary_values=secondary_values,
         )
 
-        print("rasterize basins to masks")
+        print("▦ rasterize basins to masks")
         primary_basin_mask = imod.prepare.rasterize(
             primary_basin_definition,
             column="node_id",
@@ -231,7 +211,7 @@ class AssignOfflineBudgets:
             dtype=np.int32,
         )
 
-        print("compute budgets per basin")
+        print("⚙️ compute budgets per basin")
         primary_budgets_df = (
             _compute_budgets_per_basin(
                 _crop_to_gdf(budgets[list(primary_budgets)], primary_basin_definition),
@@ -248,7 +228,7 @@ class AssignOfflineBudgets:
             / 86400
         )
 
-        print("add budgets to drainage/infiltration and surface_runoff columns")
+        print("📈 add budgets to drainage/infiltration and surface_runoff columns")
         # concat all budgets so we can return those for verification
         budgets_df = pd.concat([primary_budgets_df, secondary_budgets_df]).sort_index()
 
@@ -260,31 +240,15 @@ class AssignOfflineBudgets:
         infiltration = summed_budgets.clip(
             lower=0
         )  # alles > 0 (infiltratie is in modflow, ontrekking uit ribasim, maar in ribasim positief teken)
-        surface_runoff = (
-            pd.Series(budgets_df[list(surface_runoff_budgets)].sum(axis=1)).clip(upper=0).abs()
-        )  # assume surface_runoff can't be <0 in RIBASIM. And negative budgets in MODFLOW-MetaSWAP are positive terms in Ribasim
+        surface_runoff = pd.Series(budgets_df[list(surface_runoff_budgets)].sum(axis=1)).clip(
+            upper=0
+        ).abs()  # assume surface_runoff can't be <0 in RIBASIM
 
         # update basin drainage and infiltration
-        assert model.basin.time.df is not None
         idx = pd.MultiIndex.from_frame(model.basin.time.df[["node_id", "time"]])
-        model.basin.time.df["drainage"] = idx.map(drainage)  # pyrefly: ignore[bad-argument-type]
-        model.basin.time.df["infiltration"] = idx.map(infiltration)  # pyrefly: ignore[bad-argument-type]
-        model.basin.time.df["surface_runoff"] = idx.map(surface_runoff)  # pyrefly: ignore[bad-argument-type]
-
-        # assign fractions from budgets if user wants to
-        if assign_fractions:
-            secondary_basin_ids = secondary_basin_definition.node_id.to_numpy()
-            primary_basin_ids = primary_basin_definition.node_id.to_numpy()
-            assign_fractions_from_budgets(
-                model=model,
-                budgets_df=budgets_df,
-                primary_budgets=primary_budgets,
-                secondary_budgets=secondary_budgets,
-                surface_runoff_budgets=surface_runoff_budgets,
-                primary_basin_ids=primary_basin_ids,
-                secondary_basin_ids=secondary_basin_ids,
-                prefix=fraction_prefix,
-            )
+        model.basin.time.df["drainage"] = idx.map(drainage)
+        model.basin.time.df["infiltration"] = idx.map(infiltration)
+        model.basin.time.df["surface_runoff"] = idx.map(surface_runoff)
 
         return model, budgets_df
 
@@ -312,7 +276,7 @@ class AssignOfflineBudgets:
             budgets = self.budgets
         else:
             try:
-                budgets = xr.open_zarr(str(self.budgets)).sel(time=slice(model.starttime, model.endtime))
+                budgets = xr.open_zarr(str(self.zarr_budgets_path)).sel(time=slice(model.starttime, model.endtime))
             except Exception as e:
                 print("ERROR: you have to process your budgets to a zarr-storage first!")
                 print(
@@ -322,21 +286,15 @@ class AssignOfflineBudgets:
 
         return budgets, model
 
-    def _validate_budgets(self, budgets, primary_budgets, secondary_budgets, surface_runoff_budgets) -> None:
+    def _validate_budgets(self, budgets, primary_budgets, secondary_budgets, surface_runoff_budgets):
         """Validate if all budgets are available as data vars in budgets-file"""
         expected = primary_budgets | secondary_budgets | surface_runoff_budgets
         missing = expected - set(budgets.data_vars)
 
         if missing:
-            # TODO: turn back into a ValueError once LHM_433_budget.zip contains all expected variables
-            # see https://github.com/Deltares/Ribasim-NL/issues/510
-            warnings.warn(
-                f"budgets {missing} not supplied in budgets-file. Please check {self.budgets} with your values for `primary_budgets`, `secondary_budgets` and `surface_runoff_budgets`. Missing budgets will be skipped.",
-                stacklevel=2,
+            raise ValueError(
+                f"budgets {missing} not supplied in budgets-file. Please check {self.zarr_budgets_path} with your values for `primary_budgets`, `secondary_budgets` and `surface_runoff_budgets`"
             )
-            primary_budgets -= missing
-            secondary_budgets -= missing
-            surface_runoff_budgets -= missing
 
     def _transpose_basin_definition_polygons(
         self,
@@ -467,8 +425,8 @@ class AssignOfflineBudgets:
         basin_split: str = "area",
         basin_subtype: str = "state",
         basin_metacol: str = "meta_categorie",
-        primary_values: set[str] | None = None,
-        secondary_values: set[str] | None = None,
+        primary_values: set[str] = {"hoofdwater", "doorgaand"},
+        secondary_values: set[str] = {"bergend"},
     ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """Split basin areas into primary and secondary categories
 
@@ -491,17 +449,11 @@ class AssignOfflineBudgets:
             primary and secondary basins
         """
         # optionally get basin_metacol from other basin_subtype
-        if secondary_values is None:
-            secondary_values = {"bergend"}
-        if primary_values is None:
-            primary_values = {"hoofdwater", "doorgaand"}
-        assert ribasim_model.basin.node is not None
-        assert ribasim_model.basin.node.df is not None
         if basin_metacol in ribasim_model.basin.node.df.columns:
             nodes = ribasim_model.basin.node.df[[basin_metacol, "geometry"]].copy().reset_index(drop=False)
         else:
             df_cat = getattr(ribasim_model.basin, basin_subtype).df.copy()
-            if basin_metacol not in df_cat:
+            if basin_metacol in df_cat:
                 raise ValueError(
                     f"category column {basin_metacol} not in basin.node or basin.{basin_subtype} tables. Provide column or another `basin_subtype` value"
                 )
@@ -542,7 +494,7 @@ class AssignOfflineBudgets:
 
         return basin_definition_primair, basin_definition_secondair
 
-    def _validate_meta_basin_column(self, df: pd.DataFrame, basin_metacol: str, expected_values: set[str]) -> None:
+    def _validate_meta_basin_column(self, df: pd.DataFrame, basin_metacol: str, expected_values: set):
         """Validate if all values as expected are present in basin_metacol"""
         exception = ""
         if df[basin_metacol].isna().any():
