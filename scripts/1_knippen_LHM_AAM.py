@@ -2,7 +2,7 @@
 import geopandas as gpd
 from ribasim import Model, run_ribasim
 
-from ribasim_tools import clip_model, settings
+from ribasim_tools import clip_model, run_ribasim, settings
 
 # %% [markdown]
 
@@ -55,7 +55,7 @@ clip_model(
 )
 
 # %% [markdown]
-### wegschrijven model
+### wegschrijven en runnen model
 #
 # Set `model.use_validation = False`: wanneer het niet lukt het model weg te schrijven, omdat er nog fouten in zitten
 # Bij `run_ribasim()` print de rekenkern de foute verbindingen
