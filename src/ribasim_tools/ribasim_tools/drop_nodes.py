@@ -1,7 +1,5 @@
 from ribasim import Model
 
-from ribasim_tools.case_conversions import pascal_to_snake_case
-
 
 def drop_nodes(
     model: Model, drop_node_ids: list[int], drop_connected_links: bool = True, inplace: bool = False
@@ -32,21 +30,24 @@ def drop_nodes(
         result_model = model
     else:
         result_model = model.model_copy()
-    node_df = result_model.node_table().df
-    for node_type, node_type_df in node_df.loc[drop_node_ids].groupby("node_type"):
-        drop_node_ids_from_tables = node_type_df.index
-        # read table
-        table = getattr(result_model, pascal_to_snake_case(node_type))
 
-        # # remove node from all tables
-        for attr in type(table).model_fields.keys():
-            table_attr = getattr(table, attr)
-            df = table_attr.df
-            if df is not None:
-                if "node_id" in df.columns:
-                    table_attr.df = df[~df.node_id.isin(drop_node_ids_from_tables)]
-                else:
-                    table_attr.df = df[~df.index.isin(drop_node_ids_from_tables)]
+    assert result_model.node.df is not None
+
+    result_model.node.df = result_model.node.df[~result_model.node.df.index.isin(drop_node_ids)]
+
+    for sub in result_model._nodes():
+        # Remove from data tables
+        for table in sub._tables():
+            if table.df is not None:
+                if "node_id" in table.df.columns:
+                    table.df = table.df[~table.df["node_id"].isin(drop_node_ids)]
+                if table.df.empty:
+                    table.df = None
+
+    # make accessable for further processing
+    for node_id in drop_node_ids:
+        if node_id in result_model.node._used_node_ids:
+            result_model.node._used_node_ids.node_ids.remove(node_id)
 
     if drop_connected_links:
         result_model.link.df = result_model.link.df[

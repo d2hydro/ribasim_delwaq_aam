@@ -1,21 +1,32 @@
 # Scripts
 
-De scripts beschrijven de werkstappen om tot een volledige Ribasim-Delwaq modelsimulatie te komen voor twee modellen:
-- HSA het model gemaakt voor het Peelvenenproject
-- LHM_AAM, het model gemaakt voor het Landelijk Hydrologisch Model
+De scripts in deze map vormen samen de workflow voor een Ribasim-Delwaq simulatie voor de Bakelse Aa.
 
-De python-scripts zijn in volgorde opgebouwd:
-1. `1_ribasim_delwaq_basic_example.py`: Een basisvoorbeeld waarmee je de workflow kunt testen op het `basic_example` Ribasim testmodel
-2. `2_clip_***.py`: Knippen van het HSA en LHM_AAM op het stroomgebied van de Bakelse Aa (BA)
-3. `3_rvw_***.py`: Aanpassen van meteorologische en hydrologische randvoorwaarden (GRAM en vanuit kanalen) voor de uitgeknipte modellen uit stap `2`
-4. `4_***_Delwaq.py`: Toevoegen van fracties (tracers met default concentraties) aan de modellen uit stap `3` en runnen van de Ribasim-Delwaq simulaties
+Belangrijk:
+- Draai de scripts op volgorde van nummering.
+- Een later script verwacht dat de uitvoer van eerdere scripts al aanwezig is.
+- Gebruik voor projectinrichting, `.env` en directorystructuur ook de root-[README.md](../README.md).
 
-Dit maakt deze scripts-map structuur:
-```text
-scripts/
-|- 1_ribasim_delwaq_basic_example.py    # Basic example workflow
-|- 2_clip_HSA.py                        # Knippen HSA voor Bakelse Aa
-|- 2_clip_LHM_AAM.py                    # Knippen LHM_AAM voor Bakelse Aa (-> LHM_BA) 
-|- 3_rvw_LHM_BA.py                      # Aanpassen randvoorwaarden LHM_BA
-|- 4_LHM_AAM_Delwaq.py                  # Toevoegen fracties en runnen Ribasim-Delwaq LHM_BA
-```
+## Volgorde
+
+1. `1_knippen_LHM_AAM.py`
+   Knipt het LHM-model van Aa en Maas naar het werkgebied van de Bakelse Aa en schrijft het basismodel `LHM_BA` weg.
+
+2. `2_ribasim_delwaq_LHM_BA.py`
+   - Verrijkt `LHM_BA` met meteorologische forcering (vliegbasis Volkel), drainage- en infiltratiebudgetten uit GRAM (Modflow-MetaSWAP). 
+   - Voegt basin-(deel)fracties en fracties op level-boundaries (Peelkanalen) toe.
+   - Draait Ribasim én DELWAQ
+   - Voert een controle op continuiteit uit én toont het resultaat op het uitstroompunt van de Bakelse Aa
+
+3. `3_controle_MFMS_budgetten.py`
+   Vergelijkt de Ribasim-basinreeksen met MFMS/iMOD-budgetten (data-verificatie met het waterschap), zowel voor individuele basins als voor geaggregeerde systeemtotalen.
+
+4. `3_plotten_fracties.py`
+   Maakt controle- en presentatieplots van Delwaq-fracties, fractionele afvoer, metingen en leeftijden bij de gekozen uitstroomlocatie.
+
+## Werkwijze
+
+1. Start de repository via `open-vscode.cmd` zodat de juiste Pixi-environment actief is.
+2. Controleer of de paden in `.env` goed staan.
+3. Open en draai de scripts in in numerieke volgorde. De controle én de plots kunnen onafhankelijk gedraaid worden nadat script 2 heeft gedraaid.
+4. Alle scripts hebbben markdown-toelichtingen in de scripts zelf voor de inhoudelijke tussenstappen.

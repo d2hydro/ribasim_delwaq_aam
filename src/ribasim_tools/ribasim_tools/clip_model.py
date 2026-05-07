@@ -71,15 +71,13 @@ def clip_model(
     links = clipped_model.link.df[clipped_model.link.df.intersects(polygon.exterior)]
     print(f"Links trough polygon-boundary: {links.index.to_list()}")
 
-    node_table_df = clipped_model.node_table().df
+    node_table_df = clipped_model.node.df
 
     for node_id, node_type in convert_node_types.items():
         existing_node_type = node_table_df.at[node_id, "node_type"]
-        # get table
-        table = getattr(clipped_model, pascal_to_snake_case(existing_node_type))
 
         # save node-attributes, so we can add it later. Pop node-type as we'll change that
-        node_dict = table.node.df.loc[node_id].to_dict()
+        node_dict = model.node.df.loc[node_id].to_dict()
         node_dict.pop("node_type")
         node_dict["node_id"] = node_id
 
@@ -94,22 +92,16 @@ def clip_model(
             )
 
         # remove node from all tables
-        for attr in type(table).model_fields.keys():
-            table_attr = getattr(table, attr)
-            df = table_attr.df
-            if df is not None:
-                if "node_id" in df.columns:
-                    table_attr.df = df[df.node_id != node_id]
-                else:
-                    table_attr.df = df[df.index != node_id]
-
-        # remove from used node-ids so we can add it again in the same table
-        if node_id in table._parent._used_node_ids:
-            table._parent._used_node_ids.node_ids.remove(node_id)
+        model._remove_node_id(node_id)
 
         # add to table
         table = getattr(clipped_model, pascal_to_snake_case(node_type))
         table.add(Node(**node_dict), tables=[data])
+
+    # final (and dirty) cleanup of control table
+    model.discrete_control.variable.df = model.discrete_control.variable.df[
+        model.discrete_control.variable.df.listen_node_id.isin(model.node.df.index.values)
+    ]
 
     if inplace:
         return None
