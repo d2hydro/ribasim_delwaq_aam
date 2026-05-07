@@ -130,6 +130,7 @@ def assign_fractions_from_budgets(
     surface_runoff_budgets: set[str],
     secondary_basin_ids: np.ndarray,
     primary_basin_ids: np.ndarray,
+    discard_budgets: set[str] = {"bdgpsswm3"},
     prefix: str | None = None,
 ) -> None:
     """Assing fractions to the concentration table from MODFLOW-MetaSWAP budgets.
@@ -143,7 +144,7 @@ def assign_fractions_from_budgets(
     primary_budgets : set[str]
         set of budgets that are to be summed to primary drainage/infiltration, e.g. {"bdgriv_sys1", "bdgriv_sys4", "bdgriv_sys5"}
     secondary_budgets : set[str]
-        set of budgets that are to be summed to secondary drainage/infiltration, e.g. {"bdgriv_sys2", "bdgriv_sys3", "bdgriv_sys6", "bdgdrn_sys1", "bdgdrn_sys2", "bdgdrn_sys3", "bdgpsswm3"}
+        set of budgets that are to be summed to secondary drainage/infiltration, e.g. {"bdgriv_sys2", "bdgriv_sys3", "bdgriv_sys6", "bdgdrn_sys1", "bdgdrn_sys2", "bdgdrn_sys3"}
     surface_runoff_budgets: set[str]
         set of budgets that are to be summed to secondary surface_runoff, e.g. {"bdgqrunm3"}
     secondary_basin_ids: np.ndarray
@@ -155,6 +156,11 @@ def assign_fractions_from_budgets(
 
 
     """
+    # subtract discarded budgets
+    primary_budgets -= discard_budgets
+    secondary_budgets -= discard_budgets
+    surface_runoff_budgets -= discard_budgets
+
     # fractions primary_drainage
     primary_drainage_bdg_df = budgets_df[list(primary_budgets)].clip(upper=0).abs()
     secondary_drainage_bdg_sum = pd.Series(primary_drainage_bdg_df.sum(axis=1))

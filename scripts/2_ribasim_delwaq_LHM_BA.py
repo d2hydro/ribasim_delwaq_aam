@@ -41,6 +41,7 @@ update_meteo(
     inplace=True,
 )
 
+# Plotje met de neerslag
 basin_node_id = model.basin.node.df.index[0]
 df = model.basin.time.df[model.basin.time.df.node_id == basin_node_id].set_index("time")
 df["precipitation"] = df["precipitation"] * 86400 * 1000
@@ -66,6 +67,7 @@ modflow_budgets_path = (
 )
 metaswap_budgets_path = modflow_budgets_path / "MSWAPINPUT"
 
+# budgets lezen uit MODFLOW en MetaSWAP (xr.DataSet)
 budgets = read_budgets(
     modflow_budgets_path=modflow_budgets_path,
     metaswap_budgets_path=metaswap_budgets_path,
@@ -73,6 +75,7 @@ budgets = read_budgets(
     endtime=model.endtime,
 )
 
+# toekennen van de budgetten aan de basins. Assign_fractions=True, want dan hebben we die ook direct.
 assign_offline_budgets = AssignOfflineBudgets(budgets=budgets)
 
 model, budgets_df = assign_offline_budgets.compute_budgets(
@@ -85,7 +88,7 @@ model, budgets_df = assign_offline_budgets.compute_budgets(
 
 # %% [markdown]
 
-### Bijwerken Basin Fracties (Concentraties)
+### Bijwerken Basin Fracties (concentratie-tabel)
 #
 # inlezen de stroomgebieden waarmee we het model hebben geklip, deze bevat:
 # - Vlier
@@ -93,9 +96,6 @@ model, budgets_df = assign_offline_budgets.compute_budgets(
 # - Bakelse Aa
 # - Kaweise Loop
 # We moeten deze een beetje compacteren i.v.m. maximale lengte van een DELWAQ sommetje (20 karakters)
-
-# Wat het was
-model.basin.concentration.df.head(2)
 
 # Inlezen
 clip_boundary_gpkg = settings.source_data_dir.joinpath("shp", "subcatchments_Bakelse_Aa.shp")
@@ -130,7 +130,7 @@ model.basin.concentration.df["substance"] = (
     + model.basin.concentration.df["substance"].astype(str)
 )
 
-# E Voila!
+# E Voila (kijk naar kolom substance)!
 model.basin.concentration.df.head(2)
 
 # %% [markdown]
@@ -164,9 +164,9 @@ model.level_boundary.concentration = level_boundary.Concentration(
 
 ### Wegschrijven en runnen Ribasim model
 #
-# we schrijven ook direct de budgetten per basin weg; altijd handig!
+# we schrijven ook direct de budgetten per basin weg als CSV; altijd handig!
 model.write(settings.LHM_BA_RVW_toml_path)
-budgets_df.to_csv(budgets_df.parent.with_name("mfms_budgetten.csv.zip"))
+budgets_df.to_csv(settings.LHM_BA_RVW_toml_path.parent.with_name("mfms_budgetten.csv.zip"))
 specs = run_ribasim(settings.LHM_BA_RVW_toml_path, ribasim_home=settings.ribasim_home)
 assert specs.exit_code == 0
 
@@ -186,6 +186,7 @@ assert specs.exit_code == 0
 model = parse(
     settings.LHM_BA_RVW_toml_path, graph, substances, output_folder=settings.LHM_BA_Delwaq_output_dir, to_input=True
 )
+model.write(settings.LHM_BA_RVW_toml_path)  # saven, zodat we later het model weer kunnen lezen mét fracties
 
 # Checken continuiteit
 node_ids = check_nodes_continuity(model)

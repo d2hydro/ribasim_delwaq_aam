@@ -283,6 +283,7 @@ class AssignOfflineBudgets:
                 surface_runoff_budgets=surface_runoff_budgets,
                 primary_basin_ids=primary_basin_ids,
                 secondary_basin_ids=secondary_basin_ids,
+                discard_budgets={"bdgpsswm3"},
                 prefix=fraction_prefix,
             )
 
