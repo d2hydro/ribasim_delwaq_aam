@@ -1,13 +1,15 @@
 # %%
 from datetime import date, datetime
 from itertools import cycle
+from re import Pattern
 from typing import Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from ribasim import Model
 
-from ribasim_tools.read_delwaq_fractions import default_tracers, read_fractional_flow, read_fractions
+from ribasim_tools.read_delwaq_fractions import default_tracers, read_fractions
+from ribasim_tools.read_ribasim_flow_rate import read_flow_rate
 
 USER_COLORS = {"Initial": "#808080"}
 
@@ -40,7 +42,8 @@ def _get_colors(columns: list[str], user_colors: dict) -> list[str]:
     for col in columns:
         if col in user_colors.keys():
             colors.append(user_colors[col])  # specify user color
-        colors.append(next(color_iter))  # cycle through Pandas default color cycle
+        else:
+            colors.append(next(color_iter))  # cycle through Pandas default color cycle
     return colors
 
 
@@ -88,6 +91,33 @@ def _make_up_legend(ax, legend_outside_figure: bool, legend_x_anchor=0.85) -> No
         )
 
 
+def _group_fractions(
+    fraction_pivot: pd.DataFrame,
+    groups: dict[str, str | Pattern[str]],
+) -> pd.DataFrame:
+    """Aggregate fraction columns based on regex mappings."""
+    grouped_fraction_pivot = pd.DataFrame(index=fraction_pivot.index)
+    matched_columns: list[str] = []
+
+    # Reverse plotting order so the first user-facing group is drawn on top.
+    for new_col, pattern in reversed(list(groups.items())):
+        df = fraction_pivot.filter(regex=pattern)
+        duplicate_columns = [col for col in df.columns if col in matched_columns]
+        if duplicate_columns:
+            raise ValueError(f"One or more columns {duplicate_columns} for {new_col} are already grouped")
+        if df.empty:
+            raise ValueError(f"{new_col} doesn't match any existing fraction on pattern {pattern}")
+
+        matched_columns.extend(df.columns.to_list())
+        grouped_fraction_pivot[new_col] = df.sum(axis=1)
+
+    missed_columns = [col for col in fraction_pivot.columns if col not in matched_columns]
+    if missed_columns:
+        raise ValueError(f"Adjust mapping! Original columns missed: {missed_columns}")
+
+    return grouped_fraction_pivot
+
+
 def _plot_figure(
     pivot_df: pd.DataFrame,
     title: str,
@@ -99,7 +129,7 @@ def _plot_figure(
     starttime: DateLike | None = None,
     endtime: DateLike | None = None,
     ymax: float | None = None,
-    add_legend: bool=True
+    add_legend: bool = True,
 ) -> None:
     """Reusable plotting function for fractional flow plots."""
     # Clip time-series if starttime/endtime provided
@@ -156,6 +186,8 @@ def plot_fraction(
     ylabel: str = "Fraction",
     xlabel: str = "Time",
     add_legend: bool = True,
+    groups: dict[str, str | Pattern[str]] | None = None,
+    color_dict: dict[str, str] | None = None,
 ) -> None:
     """Plot Delwaq fractions for a specific node from a Ribasim model
 
@@ -193,7 +225,10 @@ def plot_fraction(
         validate_fractions=validate_fractions,
         validation_decimal_precision=validation_decimal_precision,
     )
-    fraction_pivot = _order_fractions(pivot_df=fraction_pivot)
+    if groups is not None:
+        fraction_pivot = _group_fractions(fraction_pivot=fraction_pivot, groups=groups)
+    else:
+        fraction_pivot = _order_fractions(pivot_df=fraction_pivot)
 
     if title is None:
         title = f"Volume fraction for basin {node_id}"
@@ -202,11 +237,11 @@ def plot_fraction(
         title=title,
         ylabel=ylabel,
         xlabel=xlabel,
-        user_colors=user_colors,
+        user_colors=color_dict or user_colors,
         legend_outside_figure=legend_outside_figure,
         starttime=starttime,
         endtime=endtime,
-        add_legend=add_legend
+        add_legend=add_legend,
     )
 
 
@@ -217,77 +252,89 @@ def plot_fractional_flow(
     tracers: list[str] = default_tracers,
     validate_fractions: bool = True,
     validation_decimal_precision: int = 3,
-    user_colors: dict[str, str] = USER_COLORS,
     legend_outside_figure: bool = False,
-    observations: pd.DataFrame | None = None,
+    observations: pd.Series | None = None,
     starttime: DateLike | None = None,
     endtime: DateLike | None = None,
     title: str | None = None,
     ylabel: str = "Flow rate (m3/s)",
     xlabel: str = "Time",
     ymax: float | None = None,
-) -> None:
-    """Plot Delwaq fractional flow for a specific link from a Ribasim model
+    groups: dict[str, str | Pattern[str]] | None = None,
+    color_dict: dict[str, str] | None = None,
+):
+    """Plot flow lines with stacked fractions on a secondary axis.
 
-    Parameters
-    ----------
-    model : Model
-        ribasim.Model object with Delwaq results loaded
-    node_id : int
-        node id to read fractions for
-    link_id : int
-        link id to read flow for
-    tracers : list[str], optional
-        Substances to plot, by default default_tracers
-    validate_fractions : bool, optional
-        Validate if Continuity and default fractions sum-up to 1, by default True
-    validation_decimal_precision : int, optional
-        Decimal precision to validate fractions, by default 3
-    user_colors : dict[str, str], optional
-        Colors to use for specific tracers, by default {"Initial": "#808080"}
-    legend_outside_figure : bool, optional
-        Place legend outside of figure, by default False
-    observations : pd.DataFrame | None, optional
-        DataFrame with observations to plot as overlay, by default None
-    starttime : DateLike | None, optional
-        Start time for plotting, by default None
-    endtime : DateLike | None, optional
-        End time for plotting, by default None
-    title: str | None, optional
-        Title for the plot, by default None. If None, a default title will be used generated based on link_id and node_id
-    ylabel: str, optional
-        Y-axis label, by default "Flow rate (m3/s)"
-    xlabel: str, optional
-        X-axis label, by default "Time"
-    ymax: float, optional
-        hard max-value for y axis
+    This variant supports grouping original fraction columns into user-defined
+    categories and plotting them with explicit colors.
     """
-    # Read fractional_flow
-    fractional_flow_pivot = read_fractional_flow(
+    simulation = read_flow_rate(model=model, link_id=link_id)
+    fraction_pivot = read_fractions(
         model=model,
         node_id=node_id,
-        link_id=link_id,
         tracers=tracers,
         validate_fractions=validate_fractions,
         validation_decimal_precision=validation_decimal_precision,
     )
 
-    fractional_flow_pivot = _order_fractions(pivot_df=fractional_flow_pivot)
+    if groups is not None:
+        pivot_df = _group_fractions(fraction_pivot=fraction_pivot, groups=groups)
+    else:
+        pivot_df = _order_fractions(pivot_df=fraction_pivot)
 
-    # customize title
+    pivot_df = pivot_df.loc[slice(starttime, endtime)]
+    simulation = simulation.loc[slice(starttime, endtime)]
+    observations_selec = observations.reindex(simulation.index) if observations is not None else None
+
     if title is None:
         title = f"Fractional flow Link {link_id} (Basin {node_id})"
 
-    # Create stacked area plot
-    return _plot_figure(
-        pivot_df=fractional_flow_pivot,
-        title=title,
-        ylabel=ylabel,
-        xlabel=xlabel,
-        user_colors=user_colors,
-        legend_outside_figure=legend_outside_figure,
-        observations=observations,
-        starttime=starttime,
-        endtime=endtime,
-        ymax=ymax,
+    fig, ax = plt.subplots(figsize=(12, 5))
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    if ymax is not None:
+        ax.set_ylim(0, ymax)
+
+    if observations_selec is not None:
+        ax.plot(
+            observations_selec.index,
+            observations_selec.values,
+            label=observations_selec.name,
+            linestyle=":",
+            color="red",
+            linewidth=2,
+            zorder=10,
+        )
+
+    ax.plot(
+        simulation.index,
+        simulation.values,
+        color="black",
+        linewidth=2,
+        label="Ribasim",
+        zorder=10,
     )
+    ax.grid(True, zorder=4)
+
+    ax2 = ax.twinx()
+    plot_kwargs = {
+        "ax": ax2,
+        "stacked": True,
+        "title": title,
+        "ylabel": "Fractie (-)",
+        "xlabel": xlabel,
+        "label": False,
+        "legend": False,
+        "alpha": 0.7,
+    }
+    if color_dict is not None:
+        plot_kwargs["color"] = [color_dict[col] for col in pivot_df.columns]
+    pivot_df.plot.area(**plot_kwargs)
+
+    ax.set_zorder(2)
+    ax2.set_zorder(1)
+    ax2.set_ylim(0, 1)
+    ax.patch.set_visible(False)
+    _make_up_legend(ax, legend_outside_figure=legend_outside_figure, legend_x_anchor=0.82)
+
+    return ax
