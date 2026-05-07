@@ -148,7 +148,8 @@ ax = plot_fractional_flow(
 age_df = pd.read_csv(settings.processed_data_dir.joinpath("leeftijd", "age_outlet.csv"), sep=";").replace(
     -999, float("nan")
 )[["AgeTR1 outlet", "AgeTR2 outlet"]]
-age_df.index = fraction_pivot.index
+n_days = (model.endtime - model.starttime).days
+age_df.index = pd.date_range(start=model.starttime, periods=n_days, freq="D")
 age_df.rename(columns={"AgeTR1 outlet": "vanaf 1512", "AgeTR2 outlet": "vanaf 1363"}, inplace=True)
 
 age_df.loc[age_df["vanaf 1363"] > 4000, "vanaf 1363"] = float("nan")

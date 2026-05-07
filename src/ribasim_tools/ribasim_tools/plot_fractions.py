@@ -17,6 +17,13 @@ USER_COLORS = {"Initial": "#808080"}
 DateLike = Union[str, date, datetime]
 
 
+def _remove_area_edges(ax) -> None:
+    """Remove outlines from filled area collections."""
+    for collection in ax.collections:
+        collection.set_linewidth(0)
+        collection.set_edgecolor("none")
+
+
 def _order_fractions(pivot_df: pd.DataFrame) -> pd.DataFrame:
     """Order Pivot DataFrame for smooth plotting.
 
@@ -143,9 +150,11 @@ def _plot_figure(
         xlabel=xlabel,
         grid=True,
         color=_get_colors(pivot_df.columns, user_colors=user_colors),
+        linewidth=0,
         label=False,
         legend=False,
     )
+    _remove_area_edges(ax)
     if ymax is not None:
         ax.set_ylim(top=ymax)
 
@@ -323,6 +332,7 @@ def plot_fractional_flow(
         "title": title,
         "ylabel": "Fractie (-)",
         "xlabel": xlabel,
+        "linewidth": 0,
         "label": False,
         "legend": False,
         "alpha": 0.7,
@@ -330,6 +340,7 @@ def plot_fractional_flow(
     if color_dict is not None:
         plot_kwargs["color"] = [color_dict[col] for col in pivot_df.columns]
     pivot_df.plot.area(**plot_kwargs)
+    _remove_area_edges(ax2)
 
     ax.set_zorder(2)
     ax2.set_zorder(1)

@@ -38,28 +38,60 @@ Als een variabele niet in `.env` staat, gebruikt `settings.py` deze defaults:
 
 ## Directorystructuur
 
-De belangrijkste paden onder `settings.source_data_dir`:
+Deze paden in de `settings.source_data_dir` heb je nodig om alle scripts te kunnen draaien:
 
 ```text
 source_data/
-├── lhm_aam/
-│   └── AaenMaas_2026_4_0/
-│       └── aam.toml
-└── hsa_model/
+|-- afvoermetingen/
+|   `-- OPP_discharge_2020_now.csv
+|-- GRAM3_2/
+|   `-- 100/
+|       `-- GRAM32_BASIS1_TA-PRJ/
+|           `-- RESULTS/
+|               `-- BASIS1_TA-PRJ/
+|                   |-- BDGDRN/
+|                   |-- BDGRIV/
+|                   `-- MSWAPINPUT/
+|-- hsa_model/
+|   `-- ribasim.toml
+|-- lhm_aam/
+|   `-- AaenMaas_2026_4_0/
+|       `-- aam.toml
+`-- shp/
+    `-- subcatchments_Bakelse_Aa.shp
 ```
+
+Bestanden en mappen onder `source_data/` die in de scripts daadwerkelijk worden ingelezen:
+
+- `lhm_aam/AaenMaas_2026_4_0/aam.toml`
+  Gebruikt in `scripts/1_knippen_LHM_AAM.py` via `settings.LHM_AAM_toml_path` als bronmodel voor het knippen.
+- `shp/subcatchments_Bakelse_Aa.shp`
+  Gebruikt in `scripts/1_knippen_LHM_AAM.py` en `scripts/2_ribasim_delwaq_LHM_BA.py` als begrenzing van het studiegebied en voor koppeling aan deelstroomgebieden.
+  Let op: dit is een shapefile-set; de bijbehorende bestanden zoals `.dbf`, `.shx` en `.prj` moeten ook aanwezig zijn.
+- `GRAM3_2/100/GRAM32_BASIS1_TA-PRJ/RESULTS/BASIS1_TA-PRJ/`
+  Gebruikt in `scripts/2_ribasim_delwaq_LHM_BA.py` als root voor GRAM/MODFLOW- en MetaSWAP-budgetbestanden.
+  Binnen deze map verwacht het script in elk geval de submappen `BDGDRN`, `BDGRIV` en `MSWAPINPUT`.
+- `GRAM3_2/100/GRAM32_BASIS1_TA-PRJ/RESULTS/BASIS1_TA-PRJ/MSWAPINPUT/`
+  Gebruikt in `scripts/2_ribasim_delwaq_LHM_BA.py` voor MetaSWAP-budgetten, met daarin onder meer de datasets `bdgPssw` en `bdgqrun`.
+- `afvoermetingen/OPP_discharge_2020_now.csv`
+  Gebruikt in `scripts/3_plotten_fracties.py` als meetreeks voor vergelijking met gesimuleerde afvoer.
+- `hsa_model/ribasim.toml`
+  Gebruikt in `scripts/debug_hsa/1a_sanitize_model.py` als bronmodel voor de HSA-debugworkflow.
+- `hsa_model/`
+  De HSA-debugworkflow leest niet alleen `ribasim.toml`, maar ook de bestanden waar dat model relatief naar verwijst, zoals de gekoppelde database en eventuele forcingbestanden in dezelfde modelmap.
 
 De belangrijkste paden onder `settings.processed_data_dir`:
 
 ```text
 processed_data/
-├── lhm_aam/
-│   ├── LHM_BA/
-│   │   └── LHM_BA.toml
-│   └── LHM_BA_RVW/
-│       ├── LHM_BA.toml
-│       └── delwaq_output/
-└── hsa_model/
-    └── HSA_BA/
+|-- lhm_aam/
+|   |-- LHM_BA/
+|   |   `-- LHM_BA.toml
+|   `-- LHM_BA_RVW/
+|       |-- LHM_BA.toml
+|       `-- delwaq_output/
+`-- hsa_model/
+    `-- HSA_BA/
 ```
 
 ## Starten in VS Code
