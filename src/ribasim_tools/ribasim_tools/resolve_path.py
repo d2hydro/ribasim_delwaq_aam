@@ -21,7 +21,7 @@ def resolve_mfms_path(path):
     shortcut = path / "GRAM32_BASIS1_TA-PRJ.PRJ.lnk"
     if shortcut:
         shell = Dispatch("WScript.Shell")
-        shortcut = shell.CreateShortCut(str(path))
+        shortcut = shell.CreateShortCut(str(shortcut))
         target = Path(shortcut.Targetpath)
 
         if not target.exists():

@@ -12,7 +12,6 @@ from ribasim_tools.read_delwaq_fractions import check_nodes_continuity
 
 from ribasim_tools import resolve_mfms_path, run_delwaq, run_ribasim, settings
 
-MODFLOW_PATH = r"F:\Extern\RIBASIM_Delwaq\Projectfiles\GRAM3_2\100\GRAM32_BASIS1_TA-PRJ\RESULTS\BASIS1_TA-PRJ"
 # %% [markdown]
 
 ### Inlezen basismodel
@@ -63,9 +62,7 @@ df.groupby(df.index.year)[["precipitation", "potential_evaporation"]].cumsum().p
 #
 # Er wordt tegelijk (deel-)fracties weggeschreven in de basin.concentration tabel.
 
-modflow_budgets_path = resolve_mfms_path(
-    settings.source_data_dir.joinpath("GRAM3_2", "100", "GRAM32_BASIS1_TA-PRJ", "GRAM32_BASIS1_TA-PRJ.PRJ.lnk")
-)
+modflow_budgets_path = resolve_mfms_path(settings.source_data_dir.joinpath("GRAM3_2", "100", "GRAM32_BASIS1_TA-PRJ"))
 # modflow_budgets_path = (
 #     settings.source_data_dir / "GRAM3_2" / "100" / "GRAM32_BASIS1_TA-PRJ" / "RESULTS" / "BASIS1_TA-PRJ"
 # )
