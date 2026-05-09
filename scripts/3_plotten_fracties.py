@@ -145,15 +145,20 @@ ax = plot_fractional_flow(
 ### Leeftijdsplot
 #
 # Plotten van de berekende verblijftijden bij de outlet.
-age_df = pd.read_csv(settings.processed_data_dir.joinpath("leeftijd", "age_outlet.csv"), sep=";").replace(
-    -999, float("nan")
-)[["AgeTR1 outlet", "AgeTR2 outlet"]]
-n_days = (model.endtime - model.starttime).days
-age_df.index = pd.date_range(start=model.starttime, periods=n_days, freq="D")
-age_df.rename(columns={"AgeTR1 outlet": "vanaf 1512", "AgeTR2 outlet": "vanaf 1363"}, inplace=True)
+age_csv = settings.processed_data_dir.joinpath("leeftijd", "age_outlet.csv")
+if not age_csv.exists():
+    print(
+        "INFO: voor het aanmaken van een leeftijdsplot, moet je eerste de leeftijdsberekening uitvoeren volgens de handleiding"
+    )
+    print(f"INFO: sla de CSV op als {age_csv}")
+else:
+    age_df = pd.read_csv(age_csv, sep=";").replace(-999, float("nan"))[["AgeTR1 outlet", "AgeTR2 outlet"]]
+    n_days = (model.endtime - model.starttime).days
+    age_df.index = pd.date_range(start=model.starttime, periods=n_days, freq="D")
+    age_df.rename(columns={"AgeTR1 outlet": "vanaf 1512", "AgeTR2 outlet": "vanaf 1363"}, inplace=True)
 
-age_df.loc[age_df["vanaf 1363"] > 4000, "vanaf 1363"] = float("nan")
-age_df.loc[age_df["vanaf 1512"] > 2000, "vanaf 1512"] = float("nan")
+    age_df.loc[age_df["vanaf 1363"] > 4000, "vanaf 1363"] = float("nan")
+    age_df.loc[age_df["vanaf 1512"] > 2000, "vanaf 1512"] = float("nan")
 
-ax = age_df.loc[slice(starttime, endtime)].plot(grid=True, ylabel="leeftijd (dagen)", xlabel="tijd")
-ax.set_ylim(0, 4000)
+    ax = age_df.loc[slice(starttime, endtime)].plot(grid=True, ylabel="leeftijd (dagen)", xlabel="tijd")
+    ax.set_ylim(0, 4000)

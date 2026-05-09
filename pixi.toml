@@ -13,7 +13,7 @@ pip = "*"
 pydantic = ">=2"
 pydantic-settings = "*"
 pytest = "*"
-ribasim = "==2026.1.0"
+ribasim = "==2026.1.1"
 ruff = "*"
 xugrid = "*"
 

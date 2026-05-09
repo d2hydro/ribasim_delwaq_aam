@@ -10,7 +10,7 @@ Belangrijk:
 ## Volgorde
 
 1. `1_knippen_LHM_AAM.py`
-   Knipt het LHM-model van Aa en Maas naar het werkgebied van de Bakelse Aa en schrijft het basismodel `LHM_BA` weg.
+   Knipt het LHM-model van Aa en Maas naar het werkgebied van de Bakelse Aa en schrijft het basismodel `LHM_BA` weg. Dit script werkt nu voor het LHM AaenMaas versie 2026.4.0. Wanneer je een nieuwe versie gebruikt is er kans dat je het knippen moet verfijnen.
 
 2. `2_ribasim_delwaq_LHM_BA.py`
    - Verrijkt `LHM_BA` met meteorologische forcering (vliegbasis Volkel), drainage- en infiltratiebudgetten uit GRAM (Modflow-MetaSWAP). 

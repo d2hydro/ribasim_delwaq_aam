@@ -12,7 +12,7 @@ from ribasim_tools import compare_series, settings
 # De budgetten worden gelezen per zone (`ZONE`) en per tijdstap (`DATE_TIME`).
 
 model = Model.read(settings.LHM_BA_RVW_toml_path)
-wbal_imod_csv = settings.processed_data_dir / "wbal" / "WBAL_dgeb.csv"
+wbal_imod_csv = settings.source_data_dir / "waterbalans_imod" / "WBAL_dgeb_clean.csv"
 
 budgets_df = pd.read_csv(wbal_imod_csv)
 budgets_df["DATE_TIME"] = pd.to_datetime(budgets_df["DATE_TIME"], format="%Y%m%d%H%M%S")
