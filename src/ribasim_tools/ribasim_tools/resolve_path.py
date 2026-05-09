@@ -1,3 +1,4 @@
+# %%
 from pathlib import Path
 
 from win32com.client import Dispatch
@@ -19,7 +20,7 @@ def resolve_mfms_path(path):
 
     # Windows shortcut (.lnk)
     shortcut = path / "GRAM32_BASIS1_TA-PRJ.PRJ.lnk"
-    if shortcut:
+    if shortcut.exists():
         shell = Dispatch("WScript.Shell")
         shortcut = shell.CreateShortCut(str(shortcut))
         target = Path(shortcut.Targetpath)
