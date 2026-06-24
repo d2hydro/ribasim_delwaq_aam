@@ -1,4 +1,4 @@
-# ribasim_delwaq_aam
+# Ribasim-DELWAQ Aa en Maas
 
 Ribasim-Delwaq workflow voor waterschap Aa en Maas.
 
