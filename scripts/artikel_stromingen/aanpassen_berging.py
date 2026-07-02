@@ -55,9 +55,9 @@ model.basin.profile.df = (
 )
 
 # wegschrijven als nieuwe case
-output_toml = settings.LHM_BA_RVW_toml_path.parents[1].joinpath(
+nieuwe_toml = settings.LHM_BA_RVW_toml_path.parents[1].joinpath(
     f"{settings.LHM_BA_RVW_toml_path.parent.name}_p90_case", settings.LHM_BA_RVW_toml_path.name
 )
 
-model = Model.write(settings.LHM_BA_RVW_toml_path.parent)
+model.write(nieuwe_toml)
 # v.a. hier DELWAQ een slinger geven en resultaten beoordelen
