@@ -9,10 +9,11 @@ from ribasim_tools import clip_model, run_ribasim, settings
 ### lees model en knip polygon in
 #
 # Let op (!):
+# - Dit is getest op het AaenMaas 2026.4.0 model. Zolang alle nodes consistent blijven, zal dit ook werken op nieuwere modellen.
 # - polygon moet dezelfde CRS hebben als het model
 # - individuele shapes in de polygonen-file kunnen slivers bevatten. Lossen we hier op door te bufferen en ontbufferen
 
-model = Model.read(settings.LHM_AAM_toml_path)
+model = Model.read(settings.source_data_dir.joinpath("lhm_aam", "AaenMaas_2026_4_0", "aam.toml"))
 
 clip_boundary_gpkg = settings.source_data_dir.joinpath("shp", "subcatchments_Bakelse_Aa.shp")
 polygon = gpd.read_file(clip_boundary_gpkg).to_crs(model.crs).union_all().buffer(1).buffer(-1)

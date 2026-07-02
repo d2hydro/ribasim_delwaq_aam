@@ -1,26 +1,31 @@
 # Ribasim-DELWAQ Aa en Maas
 
-Ribasim-Delwaq workflow voor waterschap Aa en Maas.
+![use case](png/team.png)
 
 ## Doel
+Ribasim-Delwaq workflow voor waterschap Aa en Maas. Binnen dit project hebbben wij het Modflow-MetaSWAP model van Aa en Maas (GRAM) offline gekoppeld aan Ribasim. Met deze forcering is een DELWAQ-fractiesom doorgerekend. Hiermee drainage-fluxen van verschillende grondwatersystemen worden onderscheiden in het oppervlaktewater:
 
-![use case](use_case.png)
+![use case](png/use_case.png)
 
 Deze repository bevat:
 - projectconfiguratie voor de Python-omgeving met Pixi;
 - generieke hulpmiddelen in `src/ribasim_tools`;
 - workflowscripts in `scripts/` voor het knippen, forceren, controleren en plotten van het model.
 
+## Ribasim installeren
+
+Download Ribasim 2026.1.1 van [https://github.com/Deltares/Ribasim/releases/download/v2026.1.1/ribasim_windows.zip](https://github.com/Deltares/Ribasim/releases/download/v2026.1.1/ribasim_windows.zip). In deze zip zit een mapje `ribasim`. Deze kun je op een willekeurige locatie zetten en wordt in de .env file achter `RIBASIM_HOME`. Let op (!); deze workflow is getest op Ribasim 2026.1.1.
+
 ## `.env` aanmaken
 
 De projectinstellingen worden ingelezen via `src/ribasim_tools/ribasim_tools/settings.py`. Daarbij wordt automatisch gezocht naar een `.env`-bestand in de repository-root of een bovenliggende map.
 
-Maak in de root van deze repository een bestand `.env` aan met minimaal deze variabelen:
+Maak in de root van deze repository een bestand `.env` aan met minimaal deze variabelen. Pas aan wanneer gewenst:
 
 ```env
 SOURCE_DATA_DIR=D:\repositories\ribasim_delwaq_aam\source_data
 PROCESSED_DATA_DIR=D:\repositories\ribasim_delwaq_aam\processed_data
-RIBASIM_HOME=D:\tools\ribasim
+RIBASIM_HOME=D:\ribasim
 RUN_DIMR_BAT=C:\Program Files\Deltares\D-HYDRO Suite 2025.02 1D2D\plugins\DeltaShell.Dimr\kernels\x64\bin\run_dimr.bat
 ```
 
@@ -63,7 +68,7 @@ source_data/
 
 Bestanden en mappen onder `source_data/` die in de scripts daadwerkelijk worden ingelezen:
 
-- `lhm_aam/AaenMaas_2026_4_0/aam.toml`: gebruikt in `scripts/1_knippen_LHM_AAM.py` via `settings.LHM_AAM_toml_path` als bronmodel voor het knippen.
+- `lhm_aam/AaenMaas_2026_4_0/aam.toml`: gebruikt in `scripts/1_knippen_LHM_AAM.py` als bronmodel voor het knippen. Het nieuwste model kun je downloaden van https://deltares.thegood.cloud/s/2tRGidQ5daqWJ9J, wanneer je een nieuwere versie gebruikt.
 - `shp/subcatchments_Bakelse_Aa.shp`: gebruikt in `scripts/1_knippen_LHM_AAM.py` en `scripts/2_ribasim_delwaq_LHM_BA.py` als begrenzing van het studiegebied en voor koppeling aan deelstroomgebieden. Let op: dit is een shapefile-set; de bijbehorende bestanden zoals `.dbf`, `.shx` en `.prj` moeten ook aanwezig zijn.
 - `GRAM3_2/100/GRAM32_BASIS1_TA-PRJ/RESULTS/BASIS1_TA-PRJ/`: gebruikt in `scripts/2_ribasim_delwaq_LHM_BA.py` als root voor GRAM/MODFLOW- en MetaSWAP-budgetbestanden. Binnen deze map verwacht het script in elk geval de submappen `BDGDRN`, `BDGRIV` en `MSWAPINPUT`.
 - `GRAM3_2/100/GRAM32_BASIS1_TA-PRJ/RESULTS/BASIS1_TA-PRJ/MSWAPINPUT/`: gebruikt in `scripts/2_ribasim_delwaq_LHM_BA.py` voor MetaSWAP-budgetten, met daarin onder meer de datasets `bdgPssw` en `bdgqrun`.

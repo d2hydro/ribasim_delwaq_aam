@@ -10,7 +10,7 @@ from ribasim_tools.modflow_metaswap import AssignOfflineBudgets, read_budgets
 from ribasim_tools.plot_fractions import plot_fraction
 from ribasim_tools.read_delwaq_fractions import check_nodes_continuity
 
-from ribasim_tools import run_delwaq, run_ribasim, settings
+from ribasim_tools import resolve_mfms_path, run_delwaq, run_ribasim, settings
 
 # %% [markdown]
 
@@ -62,9 +62,7 @@ df.groupby(df.index.year)[["precipitation", "potential_evaporation"]].cumsum().p
 #
 # Er wordt tegelijk (deel-)fracties weggeschreven in de basin.concentration tabel.
 
-modflow_budgets_path = (
-    settings.source_data_dir / "GRAM3_2" / "100" / "GRAM32_BASIS1_TA-PRJ" / "RESULTS" / "BASIS1_TA-PRJ"
-)
+modflow_budgets_path = resolve_mfms_path(settings.source_data_dir.joinpath("GRAM3_2", "100", "GRAM32_BASIS1_TA-PRJ"))
 metaswap_budgets_path = modflow_budgets_path / "MSWAPINPUT"
 
 # budgets lezen uit MODFLOW en MetaSWAP (xr.DataSet)

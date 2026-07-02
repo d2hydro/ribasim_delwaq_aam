@@ -6,6 +6,7 @@ from ribasim_tools.download_testmodels import download_testmodels
 from ribasim_tools.drop_nodes import drop_nodes
 from ribasim_tools.read_delwaq_fractions import check_nodes_continuity, read_fractions
 from ribasim_tools.read_ribasim_flow_rate import read_flow_rate
+from ribasim_tools.resolve_path import resolve_mfms_path
 from ribasim_tools.run_delwaq import run_delwaq
 from ribasim_tools.run_ribasim import run_ribasim
 from ribasim_tools.settings import settings
@@ -21,5 +22,6 @@ __all__ = [
     "run_ribasim",
     "run_delwaq",
     "settings",
-    "read_flow_rate"
+    "read_flow_rate",
+    "resolve_mfms_path",
 ]

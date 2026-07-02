@@ -5,8 +5,6 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/win-64/_openmp_mutex-4.5-2_gnu.conda
@@ -289,7 +287,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/rasterio-1.4.3-py313ha5c5119_3.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/re2-2025.08.12-ha104f34_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/requests-2.32.5-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2026.1.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2026.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/rich-14.2.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/ruff-0.13.2-h3e3edff_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/scikit-learn-1.7.2-py313he28f1d7_0.conda
@@ -369,8 +367,6 @@ environments:
     - url: https://conda.anaconda.org/conda-forge/
     indexes:
     - https://pypi.org/simple
-    options:
-      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/win-64/_openmp_mutex-4.5-2_gnu.conda
@@ -749,7 +745,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/re2-2025.08.12-ha104f34_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/referencing-0.37.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/requests-2.32.5-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2026.1.0-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2026.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/rich-14.2.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/roman-numerals-4.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/rope-1.14.0-pyhd8ed1ab_0.conda
@@ -6468,9 +6464,9 @@ packages:
   - pkg:pypi/requests?source=hash-mapping
   size: 59263
   timestamp: 1755614348400
-- conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2026.1.0-pyhd8ed1ab_0.conda
-  sha256: 77b05d03345189cec31f39c61a81d10ebb5b69aec303c7e7e5241dfbc7a904b9
-  md5: 0e72b348f2ade793838b15d8c755e0c2
+- conda: https://conda.anaconda.org/conda-forge/noarch/ribasim-2026.1.1-pyhd8ed1ab_0.conda
+  sha256: 4bad63571a6e3068badd73b9ce5520a314183e58cfcb7dff9b8924da9eba87e3
+  md5: b4133185b4eb29be97df2e462e871a2d
   depends:
   - geopandas >=1.0
   - matplotlib-base >=3.9
@@ -6491,8 +6487,8 @@ packages:
   license_family: MIT
   purls:
   - pkg:pypi/ribasim?source=hash-mapping
-  size: 666904
-  timestamp: 1774982065074
+  size: 671796
+  timestamp: 1778305520284
 - pypi: ./src/ribasim_tools
   name: ribasim-tools
   version: 0.0.1
@@ -6501,6 +6497,7 @@ packages:
   - geopandas
   - pytest ; extra == 'tests'
   requires_python: '>=3.13'
+  editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/rich-14.2.0-pyhcf101f3_0.conda
   sha256: edfb44d0b6468a8dfced728534c755101f06f1a9870a7ad329ec51389f16b086
   md5: a247579d8a59931091b16a1e932bbed6
