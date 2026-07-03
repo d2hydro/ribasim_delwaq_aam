@@ -31,14 +31,40 @@ user_tracers = (
 )
 plot_fraction(model, node_id, ["Continuity"])
 
-plot_fraction(model, node_id, default_tracers)
 
-plot_fraction(
-    model=model,
-    node_id=node_id,
-    tracers=user_tracers,
-    legend_outside_figure=True,
-)
+color_dict = {
+    "Neerslag": "#1f77b4",  # blauw (vast)
+    "Maaiveld afvoer": "#ff7f0e",  # oranje
+    "Randvoorwaarde": "#d62728",  # rood
+    "Drainage": "#2ca02c",  # groen
+    "Initieel": "#7f7f7f",  # grijs (vast)
+}
+
+groups = {
+    "Neerslag": "Precipitation",  # Precipitation wordt Neerslag
+    "Maaiveld afvoer": "SurfaceRunoff",  # alles met qrun wordt Maaiveld afvoer
+    "Randvoorwaarde":"LevelBoundary",
+    "Drainage": "Drainage",
+    "Initieel": "Initial",  # Initial wordt Initieel, want dat is Nederlands
+}
+
+plot_fraction(model, 
+              node_id, 
+              default_tracers, 
+              add_legend=False, 
+              starttime="2015-01-01", 
+              endtime="2016-01-01",
+              color_dict=color_dict,
+              groups=groups,
+              title=False,
+              )
+
+# plot_fraction(
+#     model=model,
+#     node_id=node_id,
+#     tracers=user_tracers,
+#     legend_outside_figure=True,
+# )
 
 # %% [markdown]
 

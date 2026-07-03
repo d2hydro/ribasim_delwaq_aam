@@ -13,7 +13,7 @@ from ribasim_tools.plot_fractions import plot_fraction, plot_fractional_flow
 model = Model.read(settings.LHM_BA_RVW_toml_path)
 
 target_categories = ["hoofdwater", "doorgaand"]
-area_factor = {"hoofdwater": 0.9, "doorgaand": 0.1}
+area_factor = {"hoofdwater": 0.05, "doorgaand": 0.05}
 
 # nodes identificeren en verwijderen
 target_nodes = model.basin.node.df.loc[
@@ -64,7 +64,7 @@ model.basin.profile.df = (
 
 # wegschrijven als nieuwe case
 nieuwe_toml = settings.LHM_BA_RVW_toml_path.parents[1].joinpath(
-    f"{settings.LHM_BA_RVW_toml_path.parent.name}_p90_case", settings.LHM_BA_RVW_toml_path.name
+    f"{settings.LHM_BA_RVW_toml_path.parent.name}_p95_case", settings.LHM_BA_RVW_toml_path.name
 )
 
 model.write(nieuwe_toml)
@@ -76,7 +76,7 @@ specs = run_ribasim(nieuwe_toml, ribasim_home=settings.ribasim_home)
 #
 from pathlib import Path
 
-delwaq_path = Path(r'C:\GitHub\data\LHM_BA_RVW_p90_case_delwaq')
+delwaq_path = Path(r'C:\GitHub\data\LHM_BA_RVW_p95_case_delwaq')
 
 # Aanmaken van de Delwaq schematisatie
 graph, substances = generate(nieuwe_toml, delwaq_path)
@@ -97,12 +97,19 @@ model.write(nieuwe_toml)  # saven, zodat we later het model weer kunnen lezen m√
 ### Inlezen Delwaq resultaten
 #
 # Inlezen van het weggeschreven Ribasim-model met de geparste Delwaq-fracties.
+nieuwe_toml = settings.LHM_BA_RVW_toml_path.parents[1].joinpath(
+    f"{settings.LHM_BA_RVW_toml_path.parent.name}_p95_case", settings.LHM_BA_RVW_toml_path.name
+)
+
 model = Model.read(nieuwe_toml)
 
 ### Plotten van fracties
 #
 # Eerste controleplots voor continuiteit, default tracers en alle user-defined tracers.
 node_id = 1216  # Bakelse Aa
+link_id = 1986  # Uitlaat Bakelse Aa
+
+default_tracers = ["LevelBoundary", "Initial", "Drainage", "Precipitation", "SurfaceRunoff"]
 
 color_dict = {
     "Neerslag": "#1f77b4",  # blauw (vast)
@@ -120,14 +127,15 @@ groups = {
     "Initieel": "Initial",  # Initial wordt Initieel, want dat is Nederlands
 }
 
-default_tracers = ["LevelBoundary", "Initial", "Drainage", "Precipitation", "SurfaceRunoff"]
 plot_fraction(model, 
               node_id, 
-              color_dict=color_dict,
-              groups=groups,
-              title=False,
               tracers=default_tracers, 
+              color_dict=color_dict, 
+              groups=groups, 
+              title=False,
+              add_legend=False, 
               starttime="2015-01-01", 
               endtime="2016-01-01")
+
 
 # %%

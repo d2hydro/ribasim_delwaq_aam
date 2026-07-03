@@ -95,6 +95,7 @@ def _make_up_legend(ax, legend_outside_figure: bool, legend_x_anchor=0.85) -> No
             uniq_handles[::-1],
             uniq_labels[::-1],
             frameon=False,
+            loc="lower left",
         )
 
 
