@@ -43,21 +43,21 @@ color_dict = {
 groups = {
     "Neerslag": "Precipitation",  # Precipitation wordt Neerslag
     "Maaiveld afvoer": "SurfaceRunoff",  # alles met qrun wordt Maaiveld afvoer
-    "Randvoorwaarde":"LevelBoundary",
+    "Randvoorwaarde": "LevelBoundary",
     "Drainage": "Drainage",
     "Initieel": "Initial",  # Initial wordt Initieel, want dat is Nederlands
 }
 
-plot_fraction(model, 
-              node_id, 
-              default_tracers, 
-              add_legend=False, 
-              starttime="2015-01-01", 
-              endtime="2016-01-01",
-              color_dict=color_dict,
-              groups=groups,
-              title=False,
-              )
+plot_fraction(
+    model,
+    node_id,
+    default_tracers,
+    starttime="2015-01-01",
+    endtime="2016-01-01",
+    color_dict=color_dict,
+    groups=groups,
+    title=False,
+)
 
 # plot_fraction(
 #     model=model,
@@ -201,25 +201,28 @@ if not age_csv.exists():
     print(f"INFO: sla de CSV op als {age_csv}")
 else:
     age_df = pd.read_csv(age_csv, sep=",").replace(-999, float("nan"))[["AgeTR1", "AgeTR2"]]
-    #n_days = (model.endtime - model.starttime).days
+    # n_days = (model.endtime - model.starttime).days
     age_df.index = pd.date_range(start="01/01/2015", end="30/12/2024", freq="D")
-    age_df.rename(columns={"AgeTR1": "Vanaf Oude Aa benedestrooms\n (Knoop 1512)", "AgeTR2": "Vanaf Oude Aa t.h.v. Vlierden\n(Knoop 1363)"}, inplace=True)
+    age_df.rename(
+        columns={
+            "AgeTR1": "Vanaf Oude Aa benedestrooms\n (Knoop 1512)",
+            "AgeTR2": "Vanaf Oude Aa t.h.v. Vlierden\n(Knoop 1363)",
+        },
+        inplace=True,
+    )
 
-    #age_df.loc[age_df["Vanaf Oude Aa\n t.h.v. Vlierden (Knoop 1363)"] > 4000, "Vanaf Oude Aa\n t.h.v. Vlierden\n (Knoop 1363)"] = float("nan")
-    #age_df.loc[age_df["Vanaf Oude Aa benedestrooms\n (Knoop 1512)"] > 2000, "Vanaf Oude Aa benedestrooms\n (Knoop 1512)"] = float("nan")
+    # age_df.loc[age_df["Vanaf Oude Aa\n t.h.v. Vlierden (Knoop 1363)"] > 4000, "Vanaf Oude Aa\n t.h.v. Vlierden\n (Knoop 1363)"] = float("nan")
+    # age_df.loc[age_df["Vanaf Oude Aa benedestrooms\n (Knoop 1512)"] > 2000, "Vanaf Oude Aa benedestrooms\n (Knoop 1512)"] = float("nan")
 
-
-    # ax = age_df.plot(grid=True, 
-    #                 ylabel="leeftijd (dagen)", 
-    #                 xlabel="tijd", 
-    #                 lw=1, 
+    # ax = age_df.plot(grid=True,
+    #                 ylabel="leeftijd (dagen)",
+    #                 xlabel="tijd",
+    #                 lw=1,
     #                 color=["#17becf","#9467bd"])
 
-    ax = age_df.loc[slice(starttime, endtime)].plot(grid=True, 
-                                                    ylabel="leeftijd (dagen)", 
-                                                    xlabel="tijd", 
-                                                    lw=1, 
-                                                    color=["#17becf","#9467bd"])
+    ax = age_df.loc[slice(starttime, endtime)].plot(
+        grid=True, ylabel="leeftijd (dagen)", xlabel="tijd", lw=1, color=["#17becf", "#9467bd"]
+    )
 #   ax.set_ylim(0, 4000)
 
 # %%

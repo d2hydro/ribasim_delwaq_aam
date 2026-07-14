@@ -1,13 +1,11 @@
 # %%
+
 import pandas as pd
 from ribasim import Model
 from ribasim.delwaq import generate, parse
-from ribasim.nodes import level_boundary
+from ribasim_tools.plot_fractions import plot_fraction
+
 from ribasim_tools import run_delwaq, run_ribasim, settings
-
-from datetime import timedelta
-from ribasim_tools.plot_fractions import plot_fraction, plot_fractional_flow
-
 
 # %% Inlezen van het weggeschreven Ribasim-model met de geparste Delwaq-fracties.
 model = Model.read(settings.LHM_BA_RVW_toml_path)
@@ -74,9 +72,7 @@ specs = run_ribasim(nieuwe_toml, ribasim_home=settings.ribasim_home)
 
 # %% ### DELWAQ!
 #
-from pathlib import Path
-
-delwaq_path = Path(r'C:\GitHub\data\LHM_BA_RVW_p90_case_delwaq')
+delwaq_path = nieuwe_toml.parent / "delwaq"
 
 # Aanmaken van de Delwaq schematisatie
 graph, substances = generate(nieuwe_toml, delwaq_path)
@@ -87,9 +83,7 @@ specs = run_delwaq(dimr_config=dimr_config, run_dimr_bat=settings.run_dimr_bat)
 assert specs.exit_code == 0
 
 # Parsen en controle van Delwaq resultaten. Continuity check voor alle nodes.
-model = parse(
-    nieuwe_toml, graph, substances, output_folder=delwaq_path, to_input=True
-)
+model = parse(nieuwe_toml, graph, substances, output_folder=delwaq_path, to_input=True)
 model.write(nieuwe_toml)  # saven, zodat we later het model weer kunnen lezen mét fracties
 
 # %% [markdown]
@@ -115,19 +109,21 @@ color_dict = {
 groups = {
     "Neerslag": "Precipitation",  # Precipitation wordt Neerslag
     "Maaiveld afvoer": "SurfaceRunoff",  # alles met qrun wordt Maaiveld afvoer
-    "Randvoorwaarde":"LevelBoundary",
+    "Randvoorwaarde": "LevelBoundary",
     "Drainage": "Drainage",
     "Initieel": "Initial",  # Initial wordt Initieel, want dat is Nederlands
 }
 
 default_tracers = ["LevelBoundary", "Initial", "Drainage", "Precipitation", "SurfaceRunoff"]
-plot_fraction(model, 
-              node_id, 
-              color_dict=color_dict,
-              groups=groups,
-              title=False,
-              tracers=default_tracers, 
-              starttime="2015-01-01", 
-              endtime="2016-01-01")
+plot_fraction(
+    model,
+    node_id,
+    color_dict=color_dict,
+    groups=groups,
+    title=False,
+    tracers=default_tracers,
+    starttime="2015-01-01",
+    endtime="2016-01-01",
+)
 
 # %%

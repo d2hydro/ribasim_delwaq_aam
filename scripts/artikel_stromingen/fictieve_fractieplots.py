@@ -23,7 +23,7 @@ end_fractions_case_2["RWZI"] = 0.2
 
 # Plotvolgorde van onder naar boven
 order = [
-    "Initial",
+    "Initeel volume",
     "Drainage (D)",
     "Aanvoer",
     "RWZI",
@@ -32,7 +32,7 @@ order = [
 ]
 
 colors = {
-    "Initial": "0.65",
+    "Initeel volume": "0.65",
     "Drainage (D)": "forestgreen",
     "Aanvoer": "red",
     "RWZI": "purple",
@@ -40,13 +40,16 @@ colors = {
     "Neerslag (P)": "royalblue",
 }
 
+LABEL_FONTSIZE = 14
+TICK_FONTSIZE = 12
+
 
 def make_fraction_plot(
     end_fractions: dict[str, float],
     title: str,
     decay_end_day: float,
 ):
-    # Fractie Initial: natuurlijk ogende exponentiele afname tot decay_end_day,
+    # Fractie Initeel volume: natuurlijk ogende exponentiele afname tot decay_end_day,
     # daarna blijft de fractie 0.
     progress = np.clip((day_axis - day_axis.min()) / (decay_end_day - day_axis.min()), 0, 1)
     decay = np.exp(-4 * progress)
@@ -55,7 +58,7 @@ def make_fraction_plot(
 
     df = pd.DataFrame(index=day_axis)
     df.index.name = "Dag"
-    df["Initial"] = initial_fraction
+    df["Initeel volume"] = initial_fraction
 
     for name, value in end_fractions.items():
         df[name] = ramp * value
@@ -72,10 +75,14 @@ def make_fraction_plot(
 
     # ax.set_title(title)
     ax.set_ylim(0, 1)
-    ax.set_ylabel("Fractie [-]")
-    ax.set_xlabel("Dag")
+    ax.set_yticks([0, 1])
+    ax.set_yticklabels(["0", "1"])
+    ax.set_ylabel("fractie [-]", fontsize=LABEL_FONTSIZE)
+    ax.set_xlabel(r"dagen $\rightarrow$", fontsize=LABEL_FONTSIZE)
     ax.set_xlim(1, 10)
-    ax.set_xticks(range(1, 11))
+    ax.set_xticks([])
+    ax.tick_params(axis="x", labelsize=TICK_FONTSIZE)
+    ax.tick_params(axis="y", labelsize=TICK_FONTSIZE)
     ax.grid(True, axis="y", alpha=0.3)
 
     fig.tight_layout()
@@ -95,7 +102,7 @@ output_dir.mkdir(parents=True, exist_ok=True)
 fig1 = make_fraction_plot(end_fractions_case_1, "Scenario 1", decay_end_day=3)
 fig1.savefig(output_dir / "fictieve_fractieplot_scenario_1.png", dpi=300, bbox_inches="tight")
 
-fig2 = make_fraction_plot(end_fractions_case_2, "Scenario 2", decay_end_day=7)
+fig2 = make_fraction_plot(end_fractions_case_2, "Scenario 2", decay_end_day=2.5)
 fig2.savefig(output_dir / "fictieve_fractieplot_scenario_2.png", dpi=300, bbox_inches="tight")
 export_legend(output_dir / "fictieve_fractieplot_legenda.png")
 
