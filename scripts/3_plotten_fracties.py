@@ -13,7 +13,7 @@ from ribasim_tools import settings
 ### Inlezen Delwaq resultaten
 #
 # Inlezen van het weggeschreven Ribasim-model met de geparste Delwaq-fracties.
-model = Model.read(settings.LHM_BA_RVW_toml_path)
+model = Model.read(settings.LHM_WAM_RVW_toml_path)
 
 # %% [markdown]
 

@@ -163,9 +163,9 @@ model.level_boundary.concentration = level_boundary.Concentration(
 ### Wegschrijven en runnen Ribasim model
 #
 # we schrijven ook direct de budgetten per basin weg als CSV; altijd handig!
-model.write(settings.LHM_BA_RVW_toml_path)
-budgets_df.to_csv(settings.LHM_BA_RVW_toml_path.parent.with_name("mfms_budgetten.csv.zip"))
-specs = run_ribasim(settings.LHM_BA_RVW_toml_path, ribasim_home=settings.ribasim_home)
+model.write(settings.LHM_WAM_RVW_toml_path)
+budgets_df.to_csv(settings.LHM_WAM_RVW_toml_path.parent.with_name("mfms_budgetten.csv.zip"))
+specs = run_ribasim(settings.LHM_WAM_RVW_toml_path, ribasim_home=settings.ribasim_home)
 assert specs.exit_code == 0
 
 # %% [markdown]
@@ -173,7 +173,7 @@ assert specs.exit_code == 0
 ### DELWAQ!
 #
 # Aanmaken van de Delwaq schematisatie
-graph, substances = generate(settings.LHM_BA_RVW_toml_path, settings.LHM_BA_Delwaq_output_dir)
+graph, substances = generate(settings.LHM_WAM_RVW_toml_path, settings.LHM_BA_Delwaq_output_dir)
 
 # Runnen van Delwaq
 dimr_config = settings.LHM_BA_Delwaq_output_dir / "dimr_config.xml"
@@ -182,9 +182,9 @@ assert specs.exit_code == 0
 
 # Parsen en controle van Delwaq resultaten. Continuity check voor alle nodes.
 model = parse(
-    settings.LHM_BA_RVW_toml_path, graph, substances, output_folder=settings.LHM_BA_Delwaq_output_dir, to_input=True
+    settings.LHM_WAM_RVW_toml_path, graph, substances, output_folder=settings.LHM_BA_Delwaq_output_dir, to_input=True
 )
-model.write(settings.LHM_BA_RVW_toml_path)  # saven, zodat we later het model weer kunnen lezen mét fracties
+model.write(settings.LHM_WAM_RVW_toml_path)  # saven, zodat we later het model weer kunnen lezen mét fracties
 
 # Checken continuiteit
 node_ids = check_nodes_continuity(model)

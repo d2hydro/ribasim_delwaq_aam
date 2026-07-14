@@ -11,7 +11,7 @@ from ribasim_tools import compare_series, settings
 # We vergelijken Ribasim-basinreeksen met de MFMS/iMOD-waterbalans uit `WBAL_dgeb.csv`.
 # De budgetten worden gelezen per zone (`ZONE`) en per tijdstap (`DATE_TIME`).
 
-model = Model.read(settings.LHM_BA_RVW_toml_path)
+model = Model.read(settings.LHM_WAM_RVW_toml_path)
 wbal_imod_csv = settings.source_data_dir / "waterbalans_imod" / "WBAL_dgeb_clean.csv"
 
 budgets_df = pd.read_csv(wbal_imod_csv)
